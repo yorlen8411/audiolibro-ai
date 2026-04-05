@@ -2,12 +2,16 @@ name: Generador Audiolibro IA
 
 on:
   schedule:
-    - cron: "0 */6 * * *"  # cada 6 horas
+    - cron: "0 */6 * * *"
   workflow_dispatch:
 
 jobs:
   generar:
     runs-on: ubuntu-latest
+
+    # 👇 AQUI ESTÁ LA MAGIA
+    env:
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
 
     steps:
       - name: Checkout repo
@@ -25,30 +29,7 @@ jobs:
           if not API_KEY:
               raise ValueError("API KEY no encontrada")
 
-          prompt = """
-          Actúa como un escritor experto en narrativa emocional para audiolibros virales en YouTube.
-
-          Objetivo:
-          Crear un capítulo 1 de aproximadamente 10 minutos con un GANCHO extremadamente fuerte en los primeros 60 segundos.
-
-          Tema:
-          La metáfora del barco y el ancla (bloqueo mental, estancamiento personal).
-
-          Instrucciones:
-          - Empieza con una frase impactante y directa
-          - Usa pausas naturales
-          - Genera emoción desde el inicio
-          - Evita introducciones suaves
-          - Haz que el oyente se identifique rápido
-
-          IMPORTANTE:
-          - Genera también 3 versiones diferentes del GANCHO al inicio
-          - Usa lenguaje simple pero poderoso
-          - Optimizado para narración con voz IA
-
-          Salida:
-          Texto listo para narración
-          """
+          prompt = "Test conexión API"
 
           url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={API_KEY}"
 
@@ -66,19 +47,7 @@ jobs:
 
           response = requests.post(url, headers=headers, json=data)
 
-          if response.status_code != 200:
-              raise Exception(f"Error API: {response.text}")
-
-          result = response.json()
-
-          text = result["candidates"][0]["content"]["parts"][0]["text"]
-
-          filename = f"capitulo_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
-
-          with open(filename, "w", encoding="utf-8") as f:
-              f.write(text)
-
-          print("Archivo generado:", filename)
+          print(response.text)
           EOF
 
       - name: Instalar dependencias
@@ -86,11 +55,3 @@ jobs:
 
       - name: Ejecutar script
         run: python3 script.py
-
-      - name: Subir resultado
-        run: |
-          git config --global user.name "bot"
-          git config --global user.email "bot@example.com"
-          git add .
-          git commit -m "Nuevo capítulo generado" || echo "Nada que commitear"
-          git push
