@@ -1,14 +1,14 @@
-name: Generador Audiolibro IA
+name: Generador Audiolibro IA - Capítulo 1
 
 on:
   schedule:
-    - cron: "0 */6 * * *"
+    - cron: "0 */6 * * *"   # Cada 6 horas
   workflow_dispatch:
 
 jobs:
   generar:
     runs-on: ubuntu-latest
-
+    
     env:
       GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
 
@@ -16,68 +16,90 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Crear script Python
+      - name: Instalar dependencias
+        run: pip install requests
+
+      - name: Crear y ejecutar script Python mejorado
         run: |
-          cat << 'EOF' > script.py
+          cat << 'EOF' > generate_chapter.py
           import requests
           import os
           from datetime import datetime
-          import json
 
           API_KEY = os.getenv("GEMINI_API_KEY")
-
           if not API_KEY:
-              raise ValueError("API KEY no encontrada")
+              raise ValueError("❌ GEMINI_API_KEY no encontrada en secrets")
 
-          prompt = "Escribe un gancho emocional corto para un audiolibro."
+          # Prompt PROFESIONAL para tu estilo de audiolibro premium
+          prompt = """Eres un escritor experto en audiolibros de desarrollo personal premium, estilo narrativo emocional profundo, similar a "El poder del ahora" o "Hábitos atómicos" pero con un tono más cinematográfico y de spoken word.
 
-          url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={API_KEY}"
+          Genera el siguiente bloque del Capítulo 1 titulado "El Ancla Invisible". 
+          Debe mantener exactamente el mismo estilo poético, pausado y poderoso de los bloques anteriores.
 
-          headers = {
-              "Content-Type": "application/json"
-          }
+          Usa frases cortas, pausas dramáticas (con ...), repeticiones intencionales y lenguaje sensorial.
+          Longitud: entre 400 y 700 palabras.
+
+          Aquí están los bloques anteriores para mantener coherencia total:
+
+          [PEGA AQUÍ TODOS LOS BLOCOS QUE ME ENVIASTE: bloque1,2,3,4,5,6,7,8]
+
+          Ahora genera el siguiente bloque lógico (el que vendría después del bloque8). 
+          Debe terminar preparando al oyente para bajar aún más profundo en el miedo o soltar el ancla."""
+
+          url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={API_KEY}"
+
+          headers = {"Content-Type": "application/json"}
 
           data = {
-              "contents": [
-                  {
-                      "parts": [{"text": prompt}]
-                  }
+              "contents": [{"parts": [{"text": prompt}]}],
+              "generationConfig": {
+                  "temperature": 0.85,
+                  "topP": 0.95,
+                  "maxOutputTokens": 2048,
+              },
+              "safetySettings": [
+                  {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
+                  {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
+                  {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
+                  {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"}
               ]
           }
 
           response = requests.post(url, headers=headers, json=data)
-
-          print("STATUS:", response.status_code)
-          print("RAW RESPONSE:", response.text)
-
+          
+          print("Status Code:", response.status_code)
+          
           if response.status_code != 200:
-              raise Exception(f"Error API: {response.text}")
+              print("Error completo:", response.text)
+              raise Exception(f"API Error: {response.status_code}")
 
           result = response.json()
-
+          
           try:
               text = result["candidates"][0]["content"]["parts"][0]["text"]
+              print("\n=== TEXTO GENERADO ===\n")
+              print(text)
           except Exception as e:
-              raise Exception(f"Error parseando respuesta: {result}")
+              print("Error parseando:", result)
+              raise Exception(f"Error en estructura de respuesta: {e}")
 
-          filename = f"capitulo_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
-
+          # Guardar con nombre secuencial bonito
+          timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+          filename = f"cap1_bloque_{timestamp}.txt"
+          
           with open(filename, "w", encoding="utf-8") as f:
-              f.write(text)
-
-          print("Archivo generado:", filename)
+              f.write(text.strip())
+          
+          print(f"\n✅ Archivo creado: {filename}")
           EOF
 
-      - name: Instalar dependencias
-        run: pip install requests
+          python3 generate_chapter.py
+        shell: bash
 
-      - name: Ejecutar script
-        run: python3 script.py
-
-      - name: Subir resultado
+      - name: Commit y Push automático
         run: |
-          git config --global user.name "bot"
-          git config --global user.email "bot@example.com"
-          git add .
-          git commit -m "Nuevo capítulo generado" || echo "Nada que commitear"
+          git config --global user.name "AudiolibroBot"
+          git config --global user.email "bot@yordev.ai"
+          git add cap1_bloque_*.txt
+          git commit -m "🤖 Nuevo bloque generado automáticamente - $(date '+%Y-%m-%d %H:%M')" || echo "No hay cambios para commitear"
           git push
