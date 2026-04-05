@@ -2,7 +2,7 @@ name: Generador Audiolibro IA - Capítulo 1
 
 on:
   schedule:
-    - cron: "0 */6 * * *"   # Cada 6 horas
+    - cron: "0 */6 * * *"
   workflow_dispatch:
 
 jobs:
@@ -11,6 +11,7 @@ jobs:
     
     env:
       GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true   # ← Soluciona el warning Node.js
 
     steps:
       - name: Checkout repo
@@ -19,7 +20,7 @@ jobs:
       - name: Instalar dependencias
         run: pip install requests
 
-      - name: Crear y ejecutar script Python mejorado
+      - name: Crear y ejecutar script Python (versión PRO 2026)
         run: |
           cat << 'EOF' > generate_chapter.py
           import requests
@@ -28,32 +29,61 @@ jobs:
 
           API_KEY = os.getenv("GEMINI_API_KEY")
           if not API_KEY:
-              raise ValueError("❌ GEMINI_API_KEY no encontrada en secrets")
+              raise ValueError("❌ GEMINI_API_KEY no encontrada en GitHub Secrets")
 
-          # Prompt PROFESIONAL para tu estilo de audiolibro premium
-          prompt = """Eres un escritor experto en audiolibros de desarrollo personal premium, estilo narrativo emocional profundo, similar a "El poder del ahora" o "Hábitos atómicos" pero con un tono más cinematográfico y de spoken word.
+          prompt = """Eres un escritor de audiolibros premium nivel Audible/ElevenLabs. 
+          Estilo: narrativo cinematográfico, emocional profundo, spoken-word, frases cortas, pausas dramáticas con ..., repeticiones intencionales y lenguaje sensorial.
 
-          Genera el siguiente bloque del Capítulo 1 titulado "El Ancla Invisible". 
-          Debe mantener exactamente el mismo estilo poético, pausado y poderoso de los bloques anteriores.
+          Genera el siguiente bloque del Capítulo 1 titulado "El Ancla Invisible".
+          Debe mantener EXACTAMENTE el mismo tono, ritmo y calidad de los bloques anteriores.
 
-          Usa frases cortas, pausas dramáticas (con ...), repeticiones intencionales y lenguaje sensorial.
-          Longitud: entre 400 y 700 palabras.
+          Aquí están los bloques ya generados (en orden):
 
-          Aquí están los bloques anteriores para mantener coherencia total:
+          BLOQUE 1:
+          ¿Y si te dijera que todo lo que crees sobre cómo cambiar tu vida... está mal?
+          ... (todo el texto completo de cap1_bloque1.txt)
 
-          [PEGA AQUÍ TODOS LOS BLOCOS QUE ME ENVIASTE: bloque1,2,3,4,5,6,7,8]
+          BLOQUE 2:
+          El ancla.
+          ... (todo el texto completo de cap1_bloque2.txt)
 
-          Ahora genera el siguiente bloque lógico (el que vendría después del bloque8). 
-          Debe terminar preparando al oyente para bajar aún más profundo en el miedo o soltar el ancla."""
+          BLOQUE 3:
+          Todos tenemos una historia.
+          ... (todo el texto completo de cap1_bloque3.txt)
 
-          url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={API_KEY}"
+          BLOQUE 4:
+          Recuerdo el día que lo entendí.
+          ... (todo el texto completo de cap1_bloque4.txt)
+
+          BLOQUE 5:
+          Aquí viene el primer giro.
+          ... (todo el texto completo de cap1_bloque5.txt)
+
+          BLOQUE 6:
+          Detente un segundo.
+          ... (todo el texto completo de cap1_bloque6.txt)
+
+          BLOQUE 7:
+          El momento en que todo empieza a cambiar...
+          ... (todo el texto completo de cap1_bloque7.txt)
+
+          BLOQUE 8:
+          Ese momento... cambia todo.
+          ... (todo el texto completo de cap1_bloque8.txt)
+
+          Ahora genera el BLOQUE 9 (el que viene inmediatamente después del bloque 8).
+          Longitud: 450-650 palabras.
+          Debe bajar aún más profundo en el miedo, soltar el ancla o el momento de decisión irreversible.
+          Termina dejando al oyente con una fuerte sensación de "ya no hay vuelta atrás"."""
+
+          url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={API_KEY}"
 
           headers = {"Content-Type": "application/json"}
 
           data = {
               "contents": [{"parts": [{"text": prompt}]}],
               "generationConfig": {
-                  "temperature": 0.85,
+                  "temperature": 0.88,
                   "topP": 0.95,
                   "maxOutputTokens": 2048,
               },
@@ -66,31 +96,24 @@ jobs:
           }
 
           response = requests.post(url, headers=headers, json=data)
-          
           print("Status Code:", response.status_code)
-          
+
           if response.status_code != 200:
-              print("Error completo:", response.text)
-              raise Exception(f"API Error: {response.status_code}")
+              print("Error completo de Gemini:", response.text)
+              raise Exception(f"API Error {response.status_code}")
 
           result = response.json()
-          
-          try:
-              text = result["candidates"][0]["content"]["parts"][0]["text"]
-              print("\n=== TEXTO GENERADO ===\n")
-              print(text)
-          except Exception as e:
-              print("Error parseando:", result)
-              raise Exception(f"Error en estructura de respuesta: {e}")
+          text = result["candidates"][0]["content"]["parts"][0]["text"]
 
-          # Guardar con nombre secuencial bonito
           timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
           filename = f"cap1_bloque_{timestamp}.txt"
-          
+
           with open(filename, "w", encoding="utf-8") as f:
               f.write(text.strip())
-          
-          print(f"\n✅ Archivo creado: {filename}")
+
+          print(f"\n✅ BLOQUE GENERADO CORRECTAMENTE: {filename}")
+          print("\n--- Vista previa del nuevo bloque ---")
+          print(text[:600] + "...")
           EOF
 
           python3 generate_chapter.py
@@ -101,5 +124,5 @@ jobs:
           git config --global user.name "AudiolibroBot"
           git config --global user.email "bot@yordev.ai"
           git add cap1_bloque_*.txt
-          git commit -m "🤖 Nuevo bloque generado automáticamente - $(date '+%Y-%m-%d %H:%M')" || echo "No hay cambios para commitear"
+          git commit -m "🤖 Nuevo bloque Capítulo 1 generado automáticamente - $(date '+%Y-%m-%d %H:%M')" || echo "No hay cambios"
           git push
