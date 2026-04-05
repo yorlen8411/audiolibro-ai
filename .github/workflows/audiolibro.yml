@@ -2,7 +2,7 @@ name: Generador Audiolibro IA
 
 on:
   schedule:
-    - cron: "0 */6 * * *"  # cada 6 horas
+    - cron: "0 */6 * * *"
   workflow_dispatch:
 
 jobs:
@@ -11,7 +11,6 @@ jobs:
 
     env:
       GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
       - name: Checkout repo
@@ -23,36 +22,14 @@ jobs:
           import requests
           import os
           from datetime import datetime
+          import json
 
           API_KEY = os.getenv("GEMINI_API_KEY")
 
           if not API_KEY:
               raise ValueError("API KEY no encontrada")
 
-          prompt = """
-          Actúa como un escritor experto en narrativa emocional para audiolibros virales en YouTube.
-
-          Objetivo:
-          Crear un capítulo 1 de aproximadamente 10 minutos con un GANCHO extremadamente fuerte en los primeros 60 segundos.
-
-          Tema:
-          La metáfora del barco y el ancla (bloqueo mental, estancamiento personal).
-
-          Instrucciones:
-          - Empieza con una frase impactante y directa
-          - Usa pausas naturales
-          - Genera emoción desde el inicio
-          - Evita introducciones suaves
-          - Haz que el oyente se identifique rápido
-
-          IMPORTANTE:
-          - Genera 3 versiones diferentes del GANCHO al inicio
-          - Usa lenguaje simple pero poderoso
-          - Optimizado para narración con voz IA
-
-          Salida:
-          Texto listo para narración
-          """
+          prompt = "Escribe un gancho emocional corto para un audiolibro."
 
           url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={API_KEY}"
 
@@ -70,6 +47,9 @@ jobs:
 
           response = requests.post(url, headers=headers, json=data)
 
+          print("STATUS:", response.status_code)
+          print("RAW RESPONSE:", response.text)
+
           if response.status_code != 200:
               raise Exception(f"Error API: {response.text}")
 
@@ -77,8 +57,8 @@ jobs:
 
           try:
               text = result["candidates"][0]["content"]["parts"][0]["text"]
-          except Exception:
-              raise Exception(f"Respuesta inesperada: {result}")
+          except Exception as e:
+              raise Exception(f"Error parseando respuesta: {result}")
 
           filename = f"capitulo_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
 
