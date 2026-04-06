@@ -1,8 +1,8 @@
-name: Máquina Autoayuda - Generador de Capítulos (Versión Estable)
+name: Máquina Autoayuda - Groq (1 Bloque Seguro)
 
 on:
   schedule:
-    - cron: "*/10 * * * *"   # Cada 10 minutos (más seguro)
+    - cron: "*/12 * * * *"   # Cada 12 minutos
   workflow_dispatch:
 
 permissions:
@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     
     env:
-      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
 
     steps:
       - name: Checkout repo
@@ -25,83 +25,63 @@ jobs:
       - name: Instalar dependencias
         run: pip install requests
 
-      - name: Generar Nuevo Capítulo (7 bloques) - Con manejo de errores
+      - name: Generar 1 Bloque con Groq
         run: |
           cat << 'EOF' > generate.py
           import requests, os, glob, time
           from datetime import datetime
 
-          API_KEY = os.getenv("GEMINI_API_KEY")
+          API_KEY = os.getenv("GROQ_API_KEY")
           if not API_KEY:
-              print("❌ ERROR CRÍTICO: GEMINI_API_KEY no encontrada en Secrets")
+              print("❌ GROQ_API_KEY no encontrada")
               exit(1)
 
-          existing = glob.glob("capitulo_*_bloque_1.txt")
-          chapter_num = len(existing) + 1
+          # Calcular siguiente bloque
+          existing = sorted(glob.glob("capitulo_*_bloque_*.txt"))
+          if not existing:
+              chapter_num = 1
+              block_num = 1
+          else:
+              last = existing[-1]
+              chapter_num = int(last.split("_")[1])
+              block_num = int(last.split("_")[3].split(".")[0]) + 1
+              if block_num > 7:
+                  chapter_num += 1
+                  block_num = 1
 
-          titles = [
-              "El Ancla Invisible", "La Jaula que Tú Construiste", "El Precio de Seguir Cómodo",
-              "La Identidad que Te Mata Lentamente", "Por Qué Saboteas Tu Propio Éxito",
-              "El Miedo que Nadie Habla", "Cuando Dejas de Mentirte a Ti Mismo"
-          ]
+          titles = ["El Ancla Invisible", "La Jaula que Tú Construiste", "El Precio de Seguir Cómodo", "La Identidad que Te Mata Lentamente", "Por Qué Saboteas Tu Propio Éxito", "El Miedo que Nadie Habla", "Cuando Dejas de Mentirte a Ti Mismo"]
 
           title = titles[(chapter_num-1) % len(titles)]
 
-          print(f"🚀 Iniciando Capítulo {chapter_num}: {title}")
+          print(f"🚀 Capítulo {chapter_num} - Bloque {block_num}: {title}")
 
-          for block in range(1, 8):
-              prompt = f"""Genera el BLOQUE {block} de 7 del capítulo de autoayuda titulado "{title}".
-              Estilo spoken-word: frases cortas, muchas pausas con "...", saltos de línea frecuentes, habla directo al oyente ("tú"). 
-              Mantén un tono emocional y motivacional."""
+          prompt = f"""Genera el BLOQUE {block_num} de 7 del capítulo de autoayuda "{title}".
+          Estilo spoken-word premium: frases muy cortas, muchas pausas con "...", saltos de línea frecuentes, habla directo al oyente ("tú"), tono emocional y motivacional."""
 
-              url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={API_KEY}"
+          url = "https://api.groq.com/openai/v1/chat/completions"
+          data = {
+              "model": "llama-3.3-70b-versatile",
+              "messages": [{"role": "user", "content": prompt}],
+              "temperature": 0.85,
+              "max_tokens": 1100
+          }
+          headers = {"Authorization": f"Bearer {API_KEY}", "Content-Type": "application/json"}
 
-              data = {
-                  "contents": [{"parts": [{"text": prompt}]}],
-                  "generationConfig": {
-                      "temperature": 0.82,
-                      "maxOutputTokens": 2048
-                  },
-                  "safetySettings": [
-                      {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
-                      {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
-                      {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
-                      {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"}
-                  ]
-              }
+          response = requests.post(url, headers=headers, json=data, timeout=40)
+          print(f"Status: {response.status_code}")
 
-              try:
-                  response = requests.post(url, headers={"Content-Type": "application/json"}, json=data, timeout=40)
-                  print(f"Status Bloque {block}: {response.status_code}")
+          if response.status_code != 200:
+              print("Error completo:")
+              print(response.text)
+              exit(1)
 
-                  if response.status_code != 200:
-                      print("Respuesta completa de error:")
-                      print(response.text)
-                      raise Exception(f"API HTTP Error {response.status_code}")
+          text = response.json()["choices"][0]["message"]["content"].strip()
 
-                  result = response.json()
+          filename = f"capitulo_{chapter_num:02d}_bloque_{block_num}.txt"
+          with open(filename, "w", encoding="utf-8") as f:
+              f.write(text)
 
-                  # Manejo robusto del response
-                  if "candidates" not in result or not result["candidates"]:
-                      print("⚠️ No candidates en la respuesta. Posible safety block o error.")
-                      print("Respuesta completa:", result)
-                      # Fallback simple
-                      text = "El bloque no se generó correctamente debido a filtros de seguridad."
-                  else:
-                      text = result["candidates"][0]["content"]["parts"][0]["text"].strip()
-
-                  filename = f"capitulo_{chapter_num:02d}_bloque_{block}.txt"
-                  with open(filename, "w", encoding="utf-8") as f:
-                      f.write(text)
-
-                  print(f"✅ Bloque {block} guardado correctamente ({len(text.split())} palabras)")
-              except Exception as e:
-                  print(f"❌ Error grave en bloque {block}: {str(e)}")
-                  raise
-
-              time.sleep(12)
-
-          print(f"🎉 Capítulo {chapter_num} completado")
+          print(f"✅ Guardado: {filename} ({len(text.split())} palabras)")
           EOF
 
           python3 generate.py
@@ -112,5 +92,5 @@ jobs:
           git config --global user.name "AudiolibroBot"
           git config --global user.email "bot@yordev.ai"
           git add capitulo_*.txt
-          git commit -m "🤖 Nuevo capítulo autoayuda generado - $(date '+%Y-%m-%d %H:%M')" || echo "No hay cambios"
+          git commit -m "🤖 Bloque Groq generado - $(date '+%Y-%m-%d %H:%M')" || echo "No hay cambios"
           git push
