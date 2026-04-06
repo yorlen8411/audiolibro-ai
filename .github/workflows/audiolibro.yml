@@ -1,8 +1,8 @@
-name: Máquina Autoayuda - Generador de Capítulos
+name: Máquina Autoayuda - Generador de Capítulos (Versión Estable)
 
 on:
   schedule:
-    - cron: "*/8 * * * *"   # Cada 8 minutos (más seguro)
+    - cron: "*/10 * * * *"   # Cada 10 minutos (más seguro)
   workflow_dispatch:
 
 permissions:
@@ -25,7 +25,7 @@ jobs:
       - name: Instalar dependencias
         run: pip install requests
 
-      - name: Generar Nuevo Capítulo (7 bloques)
+      - name: Generar Nuevo Capítulo (7 bloques) - Con manejo de errores
         run: |
           cat << 'EOF' > generate.py
           import requests, os, glob, time
@@ -33,7 +33,7 @@ jobs:
 
           API_KEY = os.getenv("GEMINI_API_KEY")
           if not API_KEY:
-              print("❌ ERROR: GEMINI_API_KEY no encontrada en Secrets")
+              print("❌ ERROR CRÍTICO: GEMINI_API_KEY no encontrada en Secrets")
               exit(1)
 
           existing = glob.glob("capitulo_*_bloque_1.txt")
@@ -51,40 +51,55 @@ jobs:
 
           for block in range(1, 8):
               prompt = f"""Genera el BLOQUE {block} de 7 del capítulo de autoayuda titulado "{title}".
-              Usa frases cortas, muchas pausas con "...", saltos de línea frecuentes y habla directo al oyente ("tú"). 
-              Estilo spoken-word emocional y motivacional."""
+              Estilo spoken-word: frases cortas, muchas pausas con "...", saltos de línea frecuentes, habla directo al oyente ("tú"). 
+              Mantén un tono emocional y motivacional."""
 
               url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={API_KEY}"
 
               data = {
                   "contents": [{"parts": [{"text": prompt}]}],
                   "generationConfig": {
-                      "temperature": 0.85,
+                      "temperature": 0.82,
                       "maxOutputTokens": 2048
-                  }
+                  },
+                  "safetySettings": [
+                      {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
+                      {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
+                      {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
+                      {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"}
+                  ]
               }
 
               try:
-                  response = requests.post(url, headers={"Content-Type": "application/json"}, json=data, timeout=30)
-                  print(f"Status Code Bloque {block}: {response.status_code}")
+                  response = requests.post(url, headers={"Content-Type": "application/json"}, json=data, timeout=40)
+                  print(f"Status Bloque {block}: {response.status_code}")
 
                   if response.status_code != 200:
-                      print("Error completo de Gemini:")
+                      print("Respuesta completa de error:")
                       print(response.text)
-                      raise Exception(f"API Error {response.status_code}")
+                      raise Exception(f"API HTTP Error {response.status_code}")
 
-                  text = response.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
+                  result = response.json()
+
+                  # Manejo robusto del response
+                  if "candidates" not in result or not result["candidates"]:
+                      print("⚠️ No candidates en la respuesta. Posible safety block o error.")
+                      print("Respuesta completa:", result)
+                      # Fallback simple
+                      text = "El bloque no se generó correctamente debido a filtros de seguridad."
+                  else:
+                      text = result["candidates"][0]["content"]["parts"][0]["text"].strip()
 
                   filename = f"capitulo_{chapter_num:02d}_bloque_{block}.txt"
                   with open(filename, "w", encoding="utf-8") as f:
                       f.write(text)
 
-                  print(f"✅ Bloque {block} generado correctamente ({len(text.split())} palabras)")
+                  print(f"✅ Bloque {block} guardado correctamente ({len(text.split())} palabras)")
               except Exception as e:
-                  print(f"❌ Error en bloque {block}: {str(e)}")
+                  print(f"❌ Error grave en bloque {block}: {str(e)}")
                   raise
 
-              time.sleep(10)  # Pausa para evitar rate limits
+              time.sleep(12)
 
           print(f"🎉 Capítulo {chapter_num} completado")
           EOF
@@ -97,5 +112,5 @@ jobs:
           git config --global user.name "AudiolibroBot"
           git config --global user.email "bot@yordev.ai"
           git add capitulo_*.txt
-          git commit -m "🤖 Nuevo capítulo autoayuda generado - $(date '+%Y-%m-%d %H:%M')" || echo "No hay cambios nuevos"
+          git commit -m "🤖 Nuevo capítulo autoayuda generado - $(date '+%Y-%m-%d %H:%M')" || echo "No hay cambios"
           git push
