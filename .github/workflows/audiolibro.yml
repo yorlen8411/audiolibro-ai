@@ -1,8 +1,8 @@
-name: Máquina Autoayuda - Groq Qwen3-32b (Pipeline de Mejora)
+name: Máquina Autoayuda - Groq Qwen3-32b (Anti-Thinking + Automejora)
 
 on:
   schedule:
-    - cron: "*/15 * * * *"   
+    - cron: "*/12 * * * *"   
   workflow_dispatch:
 
 permissions:
@@ -25,7 +25,7 @@ jobs:
       - name: Instalar dependencias
         run: pip install requests
 
-      - name: Generar + Refinar Bloque (Pipeline)
+      - name: Generar 1 Bloque con Pipeline Anti-Thinking
         run: |
           cat << 'EOF' > generate.py
           import requests, os, glob, time
@@ -36,7 +36,6 @@ jobs:
               print("❌ GROQ_API_KEY no encontrada")
               exit(1)
 
-          # Calcular siguiente bloque
           existing = sorted(glob.glob("capitulo_*_bloque_*.txt"))
           if not existing:
               chapter_num = 1
@@ -55,25 +54,25 @@ jobs:
 
           print(f"🚀 Capítulo {chapter_num} - Bloque {block_num}: {title}")
 
-          # Paso 1: Borrador inicial
+          # Paso 1: Borrador
           prompt_borrador = f"""Genera el BLOQUE {block_num} de 7 del capítulo "{title}" de autoayuda.
-          Usa frases cortas, pausas con "...", preguntas retóricas y tono emocional."""
+          Frases cortas, muchas "...", preguntas retóricas, tono emocional profundo."""
 
-          # Paso 2: Refinamiento (mejora emocional y ritmo)
-          prompt_refinar = f"""Reescribe el siguiente texto para que sea mucho más poderoso, emocional y adictivo para voz spoken-word premium.
+          # Paso 2: Refinamiento fuerte (automejora)
+          prompt_refinar = f"""Reescribe el siguiente texto para que sea mucho más poderoso, emocional y adictivo para spoken-word premium.
 
-          Reglas de mejora:
-          - Frases más cortas y impactantes
-          - Más pausas dramáticas con "..."
-          - Más preguntas retóricas fuertes
-          - Aumenta la tensión emocional progresiva
-          - Hazlo más sensorial y cinematográfico
-          - Mejora el ritmo para que suene hipnótico cuando se lea en voz alta
+          Reglas estrictas:
+          - Frases muy cortas (8-14 palabras máximo)
+          - Muchas pausas dramáticas con "..."
+          - Muchas preguntas retóricas fuertes
+          - Aumenta tensión emocional progresiva
+          - Hazlo sensorial y cinematográfico
+          - Ritmo hipnótico y profundo
 
           Texto original:
           {{draft}}
 
-          Responde solo con el texto mejorado. Nada más."""
+          Responde SOLO con el texto mejorado. NADA más. Sin explicaciones, sin <think>, sin nada interno."""
 
           url = "https://api.groq.com/openai/v1/chat/completions"
           headers = {"Authorization": f"Bearer {API_KEY}", "Content-Type": "application/json"}
@@ -93,6 +92,11 @@ jobs:
           response = requests.post(url, headers=headers, json=data, timeout=40)
           final_text = response.json()["choices"][0]["message"]["content"].strip()
 
+          # Limpieza fuerte contra <think>
+          if "<think>" in final_text:
+              final_text = final_text.split("</think>")[-1].strip()
+          final_text = final_text.replace("<think>", "").replace("</think>", "").strip()
+
           filename = f"capitulo_{chapter_num:02d}_bloque_{block_num}.txt"
           with open(filename, "w", encoding="utf-8") as f:
               f.write(final_text)
@@ -108,5 +112,5 @@ jobs:
           git config --global user.name "AudiolibroBot"
           git config --global user.email "bot@yordev.ai"
           git add capitulo_*.txt
-          git commit -m "🤖 Bloque Qwen3-32b con pipeline de mejora - $(date '+%Y-%m-%d %H:%M')" || echo "No hay cambios"
+          git commit -m "🤖 Bloque Qwen3-32b con pipeline anti-thinking - $(date '+%Y-%m-%d %H:%M')" || echo "No hay cambios"
           git push
