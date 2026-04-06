@@ -1,4 +1,4 @@
-name: Máquina Autoayuda - Groq Qwen3-32b (Sin Thinking)
+name: Máquina Autoayuda - Groq Qwen3-32b (Prompt Optimizado)
 
 on:
   schedule:
@@ -25,7 +25,7 @@ jobs:
       - name: Instalar dependencias
         run: pip install requests
 
-      - name: Generar 1 Bloque con Qwen3-32b (Sin Thinking)
+      - name: Generar 1 Bloque con Qwen3-32b
         run: |
           cat << 'EOF' > generate.py
           import requests, os, glob, time
@@ -54,25 +54,21 @@ jobs:
 
           print(f"🚀 Capítulo {chapter_num} - Bloque {block_num}: {title}")
 
-          prompt = f"""Eres un escritor maestro de guiones spoken-word para audiolibros premium de autoayuda.
+          prompt = f"""Eres un escritor experto en guiones spoken-word para audiolibros premium de autoayuda.
 
-          Genera **solo** el BLOQUE {block_num} de 7 del capítulo titulado "{title}".
+          Tarea: Genera **solo** el BLOQUE {block_num} de 7 del capítulo titulado "{title}".
 
           REGLAS ESTRICTAS:
-          - Responde ÚNICAMENTE con el texto del bloque. NADA más.
-          - NO uses <think>, </think>, razonamiento, explicaciones ni nada interno.
-          - NO menciones que estás generando un bloque.
-          - Solo el texto puro listo para voz.
-
-          ESTILO OBLIGATORIO:
-          - Frases muy cortas (8-14 palabras máximo).
+          - Responde ÚNICAMENTE con el texto puro del bloque. Nada más. No uses <think>, razonamiento, explicaciones ni nada interno.
+          - Frases muy cortas (máximo 12 palabras por frase).
           - Muchas pausas dramáticas con "...".
           - Saltos de línea frecuentes.
-          - Muchas preguntas retóricas ("¿...?", "tú", "te").
+          - Muchas preguntas retóricas dirigidas al oyente ("¿...?", "tú", "te").
           - Construye tensión emocional progresiva.
-          - Ritmo lento, hipnótico y spoken-word emocional.
+          - Lenguaje sensorial y cinematográfico.
+          - Ritmo lento, hipnótico y emocional.
 
-          Ejemplo del estilo exacto:
+          Ejemplo del estilo deseado:
           Te sientes atrapado...
           ...en una jaula invisible.
           ¿Quién la construyó?
@@ -83,14 +79,16 @@ jobs:
           ...porque sabes la verdad que escondes.
 
           Ahora genera solo el bloque {block_num} siguiendo exactamente este estilo.
-          Responde solo con el texto puro."""
+          Mantén coherencia con el capítulo.
+
+          Responde solo con el texto puro del bloque."""
 
           url = "https://api.groq.com/openai/v1/chat/completions"
           data = {
               "model": "qwen/qwen3-32b",
               "messages": [{"role": "user", "content": prompt}],
-              "temperature": 0.65,
-              "max_tokens": 850
+              "temperature": 0.68,
+              "max_tokens": 900
           }
           headers = {
               "Authorization": f"Bearer {API_KEY}",
@@ -100,13 +98,13 @@ jobs:
           response = requests.post(url, headers=headers, json=data, timeout=40)
 
           if response.status_code != 200:
-              print("Error Groq:")
+              print("Error:")
               print(response.text)
               exit(1)
 
           text = response.json()["choices"][0]["message"]["content"].strip()
 
-          # Eliminar cualquier posible <think> que se escape
+          # Limpieza extra por si sale thinking
           if "<think>" in text:
               text = text.split("</think>")[-1].strip()
 
