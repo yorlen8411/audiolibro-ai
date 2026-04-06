@@ -5,87 +5,73 @@ on:
     - cron: "0 */6 * * *"
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   generar:
     runs-on: ubuntu-latest
     
     env:
       GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true   # ← Soluciona el warning Node.js
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: main
+          fetch-depth: 0
 
       - name: Instalar dependencias
         run: pip install requests
 
-      - name: Crear y ejecutar script Python (versión PRO 2026)
+      - name: Generar Bloque 9 (versión PRO con control de calidad)
         run: |
           cat << 'EOF' > generate_chapter.py
-          import requests
-          import os
+          import requests, os, glob
           from datetime import datetime
 
           API_KEY = os.getenv("GEMINI_API_KEY")
           if not API_KEY:
-              raise ValueError("❌ GEMINI_API_KEY no encontrada en GitHub Secrets")
+              raise ValueError("❌ GEMINI_API_KEY no encontrada")
 
-          prompt = """Eres un escritor de audiolibros premium nivel Audible/ElevenLabs. 
-          Estilo: narrativo cinematográfico, emocional profundo, spoken-word, frases cortas, pausas dramáticas con ..., repeticiones intencionales y lenguaje sensorial.
+          # Cargar automáticamente todos los bloques anteriores
+          bloques = sorted(glob.glob("cap1_bloque_*.txt"))
+          contexto = ""
+          for i, archivo in enumerate(bloques, 1):
+              with open(archivo, "r", encoding="utf-8") as f:
+                  contexto += f"\n\nBLOQUE {i}:\n{f.read().strip()}\n"
 
-          Genera el siguiente bloque del Capítulo 1 titulado "El Ancla Invisible".
-          Debe mantener EXACTAMENTE el mismo tono, ritmo y calidad de los bloques anteriores.
+          prompt = f"""Eres un escritor experto en audiolibros premium de desarrollo personal (nivel Audible y ElevenLabs).
+          Estilo obligatorio: narrativo cinematográfico, emocional profundo, spoken-word. 
+          Usa frases cortas. Muchas pausas dramáticas con "...". Repeticiones intencionales. Lenguaje sensorial. Ritmo lento y poderoso.
 
-          Aquí están los bloques ya generados (en orden):
+          Genera **SOLO** el BLOQUE 9 del Capítulo 1 titulado "El Ancla Invisible".
+          Debe continuar exactamente después del Bloque 8.
 
-          BLOQUE 1:
-          ¿Y si te dijera que todo lo que crees sobre cómo cambiar tu vida... está mal?
-          ... (todo el texto completo de cap1_bloque1.txt)
+          Aquí están los 8 bloques anteriores para mantener coherencia total:
 
-          BLOQUE 2:
-          El ancla.
-          ... (todo el texto completo de cap1_bloque2.txt)
+          {contexto}
 
-          BLOQUE 3:
-          Todos tenemos una historia.
-          ... (todo el texto completo de cap1_bloque3.txt)
+          REQUISITOS ESTRICTOS:
+          - Longitud: entre 480 y 680 palabras.
+          - Nunca cortes la idea a la mitad. Termina con un cierre fuerte.
+          - Baja más profundo en el miedo al ser visto, al vacío interior o al momento de soltar el ancla.
+          - Crea tensión emocional creciente.
+          - Termina preparando al oyente para el siguiente nivel (el verdadero acto de soltar o la decisión irreversible).
 
-          BLOQUE 4:
-          Recuerdo el día que lo entendí.
-          ... (todo el texto completo de cap1_bloque4.txt)
-
-          BLOQUE 5:
-          Aquí viene el primer giro.
-          ... (todo el texto completo de cap1_bloque5.txt)
-
-          BLOQUE 6:
-          Detente un segundo.
-          ... (todo el texto completo de cap1_bloque6.txt)
-
-          BLOQUE 7:
-          El momento en que todo empieza a cambiar...
-          ... (todo el texto completo de cap1_bloque7.txt)
-
-          BLOQUE 8:
-          Ese momento... cambia todo.
-          ... (todo el texto completo de cap1_bloque8.txt)
-
-          Ahora genera el BLOQUE 9 (el que viene inmediatamente después del bloque 8).
-          Longitud: 450-650 palabras.
-          Debe bajar aún más profundo en el miedo, soltar el ancla o el momento de decisión irreversible.
-          Termina dejando al oyente con una fuerte sensación de "ya no hay vuelta atrás"."""
+          Responde ÚNICAMENTE con el texto del bloque. Sin títulos, sin explicaciones, sin "Bloque 9:"."""
 
           url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={API_KEY}"
-
-          headers = {"Content-Type": "application/json"}
 
           data = {
               "contents": [{"parts": [{"text": prompt}]}],
               "generationConfig": {
-                  "temperature": 0.88,
-                  "topP": 0.95,
-                  "maxOutputTokens": 2048,
+                  "temperature": 0.85,
+                  "topP": 0.92,
+                  "maxOutputTokens": 4096,   # ← más tokens para que no corte
               },
               "safetySettings": [
                   {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
@@ -95,34 +81,32 @@ jobs:
               ]
           }
 
-          response = requests.post(url, headers=headers, json=data)
-          print("Status Code:", response.status_code)
-
+          response = requests.post(url, headers={"Content-Type": "application/json"}, json=data)
+          
           if response.status_code != 200:
-              print("Error completo de Gemini:", response.text)
-              raise Exception(f"API Error {response.status_code}")
+              raise Exception(f"API Error: {response.status_code} - {response.text}")
 
-          result = response.json()
-          text = result["candidates"][0]["content"]["parts"][0]["text"]
+          text = response.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
 
           timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
           filename = f"cap1_bloque_{timestamp}.txt"
 
           with open(filename, "w", encoding="utf-8") as f:
-              f.write(text.strip())
+              f.write(text)
 
-          print(f"\n✅ BLOQUE GENERADO CORRECTAMENTE: {filename}")
-          print("\n--- Vista previa del nuevo bloque ---")
-          print(text[:600] + "...")
+          print(f"✅ BLOQUE 9 GENERADO: {filename}")
+          print(f"Longitud: {len(text.split())} palabras")
+          print("\\n--- VISTA PREVIA ---\\n")
+          print(text[:700] + "..." if len(text) > 700 else text)
           EOF
 
           python3 generate_chapter.py
         shell: bash
 
-      - name: Commit y Push automático
+      - name: Commit y Push
         run: |
           git config --global user.name "AudiolibroBot"
           git config --global user.email "bot@yordev.ai"
           git add cap1_bloque_*.txt
-          git commit -m "🤖 Nuevo bloque Capítulo 1 generado automáticamente - $(date '+%Y-%m-%d %H:%M')" || echo "No hay cambios"
+          git commit -m "🤖 Bloque 9 generado automáticamente - $(date '+%Y-%m-%d %H:%M')" || echo "No hay cambios"
           git push
