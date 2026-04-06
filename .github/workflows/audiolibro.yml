@@ -1,4 +1,4 @@
-name: Máquina Autoayuda - Groq Llama-3.3-70b (Estilo Premium)
+name: Máquina Autoayuda - Groq Llama-3.3-70b (Prompt Ultra Optimizado)
 
 on:
   schedule:
@@ -25,7 +25,7 @@ jobs:
       - name: Instalar dependencias
         run: pip install requests
 
-      - name: Generar 1 Bloque con Llama-3.3-70b (Prompt Optimizado)
+      - name: Generar 1 Bloque con Llama-3.3-70b (Ultra Optimizado)
         run: |
           cat << 'EOF' > generate.py
           import requests, os, glob, time
@@ -55,22 +55,22 @@ jobs:
 
           print(f"🚀 Capítulo {chapter_num} - Bloque {block_num}: {title}")
 
-          prompt = f"""Eres un escritor experto en audiolibros de autoayuda premium para Applio TTS y YouTube spoken-word.
+          prompt = f"""Eres un escritor experto en guiones de audiolibros premium de autoayuda para Applio TTS y YouTube.
 
           Genera **solo** el BLOQUE {block_num} de 7 del capítulo titulado "{title}".
 
-          REGLAS ESTRICTAS DE ESTILO (sigue esto al pie de la letra):
-          - Frases muy cortas, máximo 12-16 palabras por frase.
-          - Muchas pausas dramáticas usando "...".
-          - Saltos de línea frecuentes (uno por idea o pausa).
-          - Usa muchas preguntas retóricas dirigidas al oyente ("tú", "te", "¿...?" ).
-          - Construye tensión emocional progresiva en cada bloque.
-          - Lenguaje sensorial, cinematográfico y profundo.
-          - Ritmo hipnótico, lento y adictivo, como si estuvieras susurrando una verdad poderosa al oído del oyente.
-          - Evita frases largas y párrafos densos.
+          ESTILO OBLIGATORIO (sigue esto con precisión):
+          - Frases extremadamente cortas (máximo 10-15 palabras por frase).
+          - Muchas pausas dramáticas con "..." (usa varias por bloque).
+          - Saltos de línea frecuentes (uno por frase o pausa).
+          - Muchas preguntas retóricas dirigidas al oyente ("¿...?", "tú", "te").
+          - Construye tensión emocional progresiva (el oyente debe sentir presión emocional).
+          - Lenguaje sensorial y cinematográfico.
+          - Ritmo lento, hipnótico y spoken-word (como si le hablaras directamente al oído con intensidad).
+          - Evita párrafos largos y explicaciones. Todo debe sonar como un monólogo emocional poderoso.
 
-          Este es el bloque {block_num} de exactamente 7 bloques del capítulo.
-          Mantén coherencia interna y prepara sutilmente el siguiente bloque.
+          Este es el bloque {block_num} de exactamente 7 bloques.
+          Mantén coherencia con el tema del capítulo y prepara sutilmente el siguiente bloque.
 
           Responde **ÚNICAMENTE** con el texto puro del bloque.
           No agregues títulos, números, explicaciones ni nada más."""
@@ -79,8 +79,8 @@ jobs:
           data = {
               "model": "llama-3.3-70b-versatile",
               "messages": [{"role": "user", "content": prompt}],
-              "temperature": 0.78,        # Bajé un poco para más control y consistencia
-              "max_tokens": 950
+              "temperature": 0.72,      # Bajada para más consistencia y control
+              "max_tokens": 900
           }
           headers = {
               "Authorization": f"Bearer {API_KEY}",
@@ -111,5 +111,5 @@ jobs:
           git config --global user.name "AudiolibroBot"
           git config --global user.email "bot@yordev.ai"
           git add capitulo_*.txt
-          git commit -m "🤖 Bloque Llama-3.3-70b premium generado - $(date '+%Y-%m-%d %H:%M')" || echo "No hay cambios"
+          git commit -m "🤖 Bloque Llama-3.3-70b ultra-optimizado - $(date '+%Y-%m-%d %H:%M')" || echo "No hay cambios"
           git push
