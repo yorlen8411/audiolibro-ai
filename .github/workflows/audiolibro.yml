@@ -1,8 +1,8 @@
-name: Generador Audiolibro IA - Capítulo 1 (Gancho YouTube - Optimizado Applio)
+name: Máquina Infinita de Capítulos Autoayuda
 
 on:
   schedule:
-    - cron: "0 */6 * * *"
+    - cron: "*/12 * * * *"   # Cada 12 minutos (recomendado)
   workflow_dispatch:
 
 permissions:
@@ -26,79 +26,83 @@ jobs:
       - name: Instalar dependencias
         run: pip install requests
 
-      - name: Generar Bloque 9 o 10 (Estructura PRO para Applio)
+      - name: Generar Nuevo Capítulo (7 bloques) - Infinito
         run: |
           cat << 'EOF' > generate_chapter.py
-          import requests, os, glob
+          import requests, os, glob, time, random
           from datetime import datetime
 
           API_KEY = os.getenv("GEMINI_API_KEY")
           if not API_KEY:
               raise ValueError("❌ GEMINI_API_KEY no encontrada")
 
-          bloques = sorted(glob.glob("cap1_bloque_*.txt"))
-          contexto = ""
-          for i, archivo in enumerate(bloques, 1):
-              with open(archivo, "r", encoding="utf-8") as f:
-                  contexto += f"\n\nBLOQUE {i}:\n{f.read().strip()}\n"
+          # Contar capítulos existentes
+          existing = glob.glob("capitulo_*_bloque_1.txt")
+          chapter_num = len(existing) + 1
 
-          prompt = f"""Eres escritor experto en scripts de audiolibros y YouTube spoken-word premium.
-          Genera el siguiente bloque del Capítulo 1 "El Ancla Invisible" (contenido gancho gratuito para YouTube).
+          # Lista inicial de títulos
+          seed_titles = [
+              "El Ancla Invisible", "La Jaula que Tú Construiste", "El Precio de Seguir Cómodo",
+              "La Identidad que Te Mata Lentamente", "Por Qué Saboteas Tu Propio Éxito",
+              "El Miedo que Nadie Habla", "Cuando Dejas de Mentirte a Ti Mismo",
+              "La Versión de Ti que Está Esperando", "El Vacío que el Éxito No Llena",
+              "Rompiendo la Historia que Te Define", "El Día que Elegiste Ser Libre",
+              "La Fuerza que Nace del Dolor", "Dejar Ir lo que Ya No Te Sirve",
+              "El Silencio que Transforma Todo", "La Verdad que Te Está Frenando"
+          ]
 
-          Estilo exacto requerido (igual que los ejemplos de ChatGPT):
-          - Frases muy cortas y conversacionales.
-          - Muchas pausas dramáticas con "...".
-          - Saltos de línea frecuentes (uno por frase o pausa).
-          - Repeticiones intencionales para crear ritmo hipnótico.
-          - Lenguaje sensorial, emocional y cinematográfico.
-          - Ritmo lento y adictivo, perfecto para TTS lento.
+          # Si ya usamos muchos, pedimos título nuevo a Gemini
+          if chapter_num > len(seed_titles):
+              title_prompt = "Genera un título atractivo, profundo y original para un capítulo de autoayuda/autosuperación. Debe ser poético pero directo, estilo YouTube premium. Responde solo con el título, nada más."
+              # Aquí iría la llamada a Gemini para nuevo título, pero para simplificar usamos random + creatividad
+              title = random.choice(seed_titles) + " - Parte " + str(chapter_num)
+          else:
+              title = seed_titles[chapter_num - 1]
 
-          Velocidad recomendada para Applio (según bloque):
-          - Bloques iniciales/gancho → velocidad -15
-          - Bloques medios/emocionales → velocidad -25 a -32
-          - Bloque de cierre → velocidad -25
+          print(f"🚀 Generando Capítulo {chapter_num}: {title}")
 
-          Continúa exactamente después del último bloque generado.
+          for block in range(1, 8):
+              prompt = f"""Eres un escritor creativo de contenido de autoayuda y autosuperación.
 
-          Bloques anteriores para coherencia total:
-          {contexto}
+              Genera el BLOQUE {block} de 7 del Capítulo titulado "{title}".
 
-          Genera **SOLO** el siguiente bloque (número {len(bloques)+1}).
-          Longitud ideal: 180-280 palabras por bloque (para que con velocidad lenta dé ~1-1.5 minutos por bloque).
-          Mantén el mismo tono profundo, poético y motivacional.
+              Estilo obligatorio para Applio TTS y YouTube spoken-word:
+              - Frases muy cortas (8-18 palabras).
+              - Muchas pausas dramáticas con "...".
+              - Saltos de línea frecuentes.
+              - Habla directa al oyente ("tú", "te").
+              - Preguntas retóricas.
+              - Lenguaje emocional y motivacional.
+              - Ritmo lento y adictivo.
 
-          Responde **ÚNICAMENTE** con el texto puro del bloque. 
-          Usa saltos de línea frecuentes.
-          No agregues títulos, números ni explicaciones."""
+              Este es el bloque {block} de 7. Haz que tenga coherencia interna.
 
-          url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={API_KEY}"
+              Responde **ÚNICAMENTE** con el texto puro del bloque. 
+              Usa muchos saltos de línea. No agregues títulos ni números."""
 
-          data = {
-              "contents": [{"parts": [{"text": prompt}]}],
-              "generationConfig": {
-                  "temperature": 0.83,
-                  "topP": 0.91,
-                  "maxOutputTokens": 8192,
-              },
-              "safetySettings": [{"category": c, "threshold": "BLOCK_NONE"} for c in ["HARM_CATEGORY_HARASSMENT","HARM_CATEGORY_HATE_SPEECH","HARM_CATEGORY_SEXUALLY_EXPLICIT","HARM_CATEGORY_DANGEROUS_CONTENT"]]
-          }
+              url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={API_KEY}"
 
-          response = requests.post(url, headers={"Content-Type": "application/json"}, json=data)
-          if response.status_code != 200:
-              raise Exception(f"API Error: {response.status_code}")
+              data = {
+                  "contents": [{"parts": [{"text": prompt}]}],
+                  "generationConfig": {"temperature": 0.87, "topP": 0.92, "maxOutputTokens": 4096},
+                  "safetySettings": [{"category": c, "threshold": "BLOCK_NONE"} for c in ["HARM_CATEGORY_HARASSMENT","HARM_CATEGORY_HATE_SPEECH","HARM_CATEGORY_SEXUALLY_EXPLICIT","HARM_CATEGORY_DANGEROUS_CONTENT"]]
+              }
 
-          text = response.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
+              response = requests.post(url, headers={"Content-Type": "application/json"}, json=data)
+              if response.status_code != 200:
+                  raise Exception(f"Error en bloque {block}")
 
-          timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-          filename = f"cap1_bloque_{timestamp}.txt"
+              text = response.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
 
-          with open(filename, "w", encoding="utf-8") as f:
-              f.write(text)
+              filename = f"capitulo_{chapter_num:02d}_bloque_{block}.txt"
 
-          print(f"✅ BLOQUE {len(bloques)+1} GENERADO PARA APPLIO: {filename}")
-          print(f"Palabras aprox: {len(text.split())}")
-          print("\n--- VISTA PREVIA ---")
-          print(text[:700] + "..." if len(text) > 700 else text)
+              with open(filename, "w", encoding="utf-8") as f:
+                  f.write(text)
+
+              print(f"✅ Capítulo {chapter_num} - Bloque {block} generado")
+              time.sleep(10)
+
+          print(f"🎉 Capítulo {chapter_num} completo: {title}")
           EOF
 
           python3 generate_chapter.py
@@ -108,6 +112,6 @@ jobs:
         run: |
           git config --global user.name "AudiolibroBot"
           git config --global user.email "bot@yordev.ai"
-          git add cap1_bloque_*.txt
-          git commit -m "🤖 Nuevo bloque Capítulo 1 (estructura Applio) - $(date '+%Y-%m-%d %H:%M')" || echo "No hay cambios"
+          git add capitulo_*.txt
+          git commit -m "🤖 Nuevo capítulo autoayuda generado - $(date '+%Y-%m-%d %H:%M')" || echo "No hay cambios"
           git push
