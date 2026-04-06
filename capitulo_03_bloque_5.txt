@@ -1,0 +1,11 @@
+<think>
+Okay, so I need to help the user rewrite their spoken-word text to make it more powerful, emotional, and addictive. Let me start by understanding the original text. Wait, the original text isn't provided here. Oh, right, the user might have mentioned it in their previous message. Let me check again.
+
+Hmm, looking back, the user provided a set of rules but no actual original text. That's a problem. How can I rework something when I don't have the source? Maybe they forgot to include it. Let me see the history. The initial query says "Reescribe el siguiente texto..." but there's no following text. The user then provided rules but no original content. So the user might have made a mistake and didn't include the text. 
+
+In that case, my response should point out that the original text is missing. I need to inform them that without the original content, I can't proceed with the rewrite. I should ask them to provide the text so I can apply the rules: shorter phrases, dramatic pauses, rhetorical questions, emotional tension, cinematic elements, and a hypnotic rhythm. 
+
+Alternatively, maybe the original text was in a previous conversation. But looking at the query history, there's only one message from the user. So it's definitely missing. I need to respond that I can't help without the original text.
+</think>
+
+No puedo reescribir el texto porque no has proporcionado el contenido original. Por favor, comparte el texto que deseas mejorar, y aplicaré las reglas de manera inmediata.
