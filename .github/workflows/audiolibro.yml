@@ -1,4 +1,4 @@
-name: Generador Audiolibro IA - Capítulo 1 (Optimizado para Applio TTS)
+name: Generador Audiolibro IA - Capítulo 1 (Optimizado Applio TTS)
 
 on:
   schedule:
@@ -26,63 +26,68 @@ jobs:
       - name: Instalar dependencias
         run: pip install requests
 
-      - name: Generar Bloque 9 OPTIMIZADO PARA APPLIO
+      - name: Generar Bloque 9 ULTRA-OPTIMIZADO PARA APPLIO
         run: |
           cat << 'EOF' > generate_chapter.py
           import requests, os, glob
           from datetime import datetime
 
           API_KEY = os.getenv("GEMINI_API_KEY")
-          if not API_KEY: raise ValueError("❌ GEMINI_API_KEY no encontrada")
+          if not API_KEY:
+              raise ValueError("❌ GEMINI_API_KEY no encontrada")
 
+          # Cargar todos los bloques anteriores automáticamente
           bloques = sorted(glob.glob("cap1_bloque_*.txt"))
           contexto = ""
           for i, archivo in enumerate(bloques, 1):
               with open(archivo, "r", encoding="utf-8") as f:
                   contexto += f"\n\nBLOQUE {i}:\n{f.read().strip()}\n"
 
-          prompt = f"""Eres un escritor experto en scripts de audiolibros premium para TTS local como Applio (RVC + StyleTTS2 o similar).
-          El texto generado será leído por voz IA offline, por lo que debe ser 100% optimizado para spoken-word.
+          prompt = f"""Eres escritor especialista en guiones de audiolibros premium para **Applio TTS** (RVC + StyleTTS2 o Piper).
+          El texto será leído por voz IA offline, así que debe estar 100% optimizado para spoken-word de máxima calidad.
 
-          Estilo obligatorio:
-          - Frases muy cortas y conversacionales (máximo 15-20 palabras por frase).
-          - Muchas pausas dramáticas con "...".
-          - Repeticiones intencionales para énfasis emocional.
+          REGLAS ESTRICTAS PARA APPLIO:
+          - Frases MUY CORTAS (ideal 8-18 palabras máximo).
+          - Muchas pausas dramáticas con "..." (esto ayuda muchísimo a la voz).
+          - Saltos de línea frecuentes (uno por frase o pausa).
+          - Repeticiones intencionales para crear ritmo hipnótico.
           - Lenguaje sensorial y cinematográfico.
-          - Ritmo lento, hipnótico y adictivo.
-          - Saltos de línea frecuentes para que la voz respire naturalmente.
+          - Ritmo lento, emocional y adictivo.
+          - NUNCA cortes una idea a la mitad.
 
           Genera **SOLO** el BLOQUE 9 del Capítulo 1 "El Ancla Invisible".
           Continúa exactamente después del Bloque 8.
 
-          Bloques anteriores (mantén coherencia total):
+          Bloques anteriores para mantener coherencia perfecta:
           {contexto}
 
-          REQUISITOS ESTRICTOS PARA APPLIO:
-          - Longitud: 520-680 palabras.
-          - Intensifica el miedo al ser visto, al vacío interior y a soltar el ancla.
-          - Construye tensión emocional creciente.
-          - Termina con un cierre poderoso que deje al oyente con "ya no hay vuelta atrás" y ansias por continuar.
-          - Nunca cortes una idea a la mitad. Todo debe fluir perfecto para narración spoken-word.
+          TEMA DEL BLOQUE 9:
+          Baja profundo al miedo real: el vacío debajo del ancla, la promesa/maldición de soltar, los secretos oscuros, el terror a ser visto tal como eres. Construye tensión hasta el borde de la decisión irreversible.
 
-          Responde **ÚNICAMENTE** con el texto puro del bloque. Sin títulos, sin explicaciones, sin nada más."""
+          REQUISITOS OBLIGATORIOS:
+          - Longitud: entre 550 y 680 palabras.
+          - Termina con un cierre emocional fuerte que deje al oyente con sensación de "ya no hay vuelta atrás" y urgencia por el siguiente bloque.
+          - Todo debe fluir perfecto cuando se lea en voz alta con Applio.
+
+          Responde **ÚNICAMENTE** con el texto puro del bloque. Sin títulos, sin "Bloque 9", sin explicaciones. Solo el texto listo para TTS."""
 
           url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={API_KEY}"
 
           data = {
               "contents": [{"parts": [{"text": prompt}]}],
               "generationConfig": {
-                  "temperature": 0.85,
-                  "topP": 0.92,
-                  "maxOutputTokens": 4096,
+                  "temperature": 0.82,
+                  "topP": 0.90,
+                  "maxOutputTokens": 8192,   # máximo posible para evitar cortes
               },
               "safetySettings": [{"category": c, "threshold": "BLOCK_NONE"} for c in ["HARM_CATEGORY_HARASSMENT","HARM_CATEGORY_HATE_SPEECH","HARM_CATEGORY_SEXUALLY_EXPLICIT","HARM_CATEGORY_DANGEROUS_CONTENT"]]
           }
 
-          r = requests.post(url, headers={"Content-Type": "application/json"}, json=data)
-          if r.status_code != 200: raise Exception(f"API Error: {r.text}")
+          response = requests.post(url, headers={"Content-Type": "application/json"}, json=data)
+          if response.status_code != 200:
+              raise Exception(f"API Error: {response.status_code} - {response.text}")
 
-          text = r.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
+          text = response.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
 
           timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
           filename = f"cap1_bloque_{timestamp}.txt"
@@ -90,7 +95,10 @@ jobs:
           with open(filename, "w", encoding="utf-8") as f:
               f.write(text)
 
-          print(f"✅ BLOQUE GENERADO PARA APPLIO: {filename} ({len(text.split())} palabras)")
+          word_count = len(text.split())
+          print(f"✅ BLOQUE 9 GENERADO PARA APPLIO: {filename}")
+          print(f"Longitud: {word_count} palabras")
+          print("\n--- VISTA PREVIA (primeras 900 caracteres) ---")
           print(text[:900] + "..." if len(text) > 900 else text)
           EOF
 
@@ -102,5 +110,5 @@ jobs:
           git config --global user.name "AudiolibroBot"
           git config --global user.email "bot@yordev.ai"
           git add cap1_bloque_*.txt
-          git commit -m "🤖 Bloque 9 optimizado para Applio TTS - $(date '+%Y-%m-%d %H:%M')" || echo "No hay cambios"
+          git commit -m "🤖 Bloque 9 ultra-optimizado para Applio TTS - $(date '+%Y-%m-%d %H:%M')" || echo "No hay cambios"
           git push
