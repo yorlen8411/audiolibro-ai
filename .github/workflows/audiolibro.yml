@@ -2,7 +2,7 @@ name: Máquina Infinita de Capítulos Autoayuda
 
 on:
   schedule:
-    - cron: "*/12 * * * *"   # Cada 12 minutos (recomendado)
+    - cron: "*/5 * * * *"   # Cada 5 minutos mientras pruebas
   workflow_dispatch:
 
 permissions:
@@ -26,86 +26,44 @@ jobs:
       - name: Instalar dependencias
         run: pip install requests
 
-      - name: Generar Nuevo Capítulo (7 bloques) - Infinito
+      - name: Generar Nuevo Capítulo (7 bloques)
         run: |
-          cat << 'EOF' > generate_chapter.py
-          import requests, os, glob, time, random
+          cat << 'EOF' > generate.py
+          import requests, os, glob, time
           from datetime import datetime
+          import random
 
           API_KEY = os.getenv("GEMINI_API_KEY")
           if not API_KEY:
-              raise ValueError("❌ GEMINI_API_KEY no encontrada")
+              raise ValueError("API KEY no encontrada")
 
-          # Contar capítulos existentes
           existing = glob.glob("capitulo_*_bloque_1.txt")
           chapter_num = len(existing) + 1
 
-          # Lista inicial de títulos
-          seed_titles = [
-              "El Ancla Invisible", "La Jaula que Tú Construiste", "El Precio de Seguir Cómodo",
-              "La Identidad que Te Mata Lentamente", "Por Qué Saboteas Tu Propio Éxito",
-              "El Miedo que Nadie Habla", "Cuando Dejas de Mentirte a Ti Mismo",
-              "La Versión de Ti que Está Esperando", "El Vacío que el Éxito No Llena",
-              "Rompiendo la Historia que Te Define", "El Día que Elegiste Ser Libre",
-              "La Fuerza que Nace del Dolor", "Dejar Ir lo que Ya No Te Sirve",
-              "El Silencio que Transforma Todo", "La Verdad que Te Está Frenando"
-          ]
+          titles = ["El Ancla Invisible", "La Jaula que Tú Construiste", "El Precio de Seguir Cómodo", "La Identidad que Te Mata Lentamente", "Por Qué Saboteas Tu Propio Éxito", "El Miedo que Nadie Habla", "Cuando Dejas de Mentirte a Ti Mismo", "La Versión de Ti que Está Esperando", "El Vacío que el Éxito No Llena", "Rompiendo la Historia que Te Define"]
 
-          # Si ya usamos muchos, pedimos título nuevo a Gemini
-          if chapter_num > len(seed_titles):
-              title_prompt = "Genera un título atractivo, profundo y original para un capítulo de autoayuda/autosuperación. Debe ser poético pero directo, estilo YouTube premium. Responde solo con el título, nada más."
-              # Aquí iría la llamada a Gemini para nuevo título, pero para simplificar usamos random + creatividad
-              title = random.choice(seed_titles) + " - Parte " + str(chapter_num)
-          else:
-              title = seed_titles[chapter_num - 1]
+          title = titles[(chapter_num-1) % len(titles)]
 
-          print(f"🚀 Generando Capítulo {chapter_num}: {title}")
+          print(f"Generando Capítulo {chapter_num}: {title}")
 
-          for block in range(1, 8):
-              prompt = f"""Eres un escritor creativo de contenido de autoayuda y autosuperación.
-
-              Genera el BLOQUE {block} de 7 del Capítulo titulado "{title}".
-
-              Estilo obligatorio para Applio TTS y YouTube spoken-word:
-              - Frases muy cortas (8-18 palabras).
-              - Muchas pausas dramáticas con "...".
-              - Saltos de línea frecuentes.
-              - Habla directa al oyente ("tú", "te").
-              - Preguntas retóricas.
-              - Lenguaje emocional y motivacional.
-              - Ritmo lento y adictivo.
-
-              Este es el bloque {block} de 7. Haz que tenga coherencia interna.
-
-              Responde **ÚNICAMENTE** con el texto puro del bloque. 
-              Usa muchos saltos de línea. No agregues títulos ni números."""
+          for b in range(1,8):
+              prompt = f"""Genera el BLOQUE {b} de 7 del capítulo "{title}" de autoayuda.
+              Frases cortas. Muchas "...". Saltos de línea. Habla directo a "tú". Estilo spoken-word emocional."""
 
               url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={API_KEY}"
+              data = {"contents": [{"parts": [{"text": prompt}]}],"generationConfig": {"temperature": 0.85, "maxOutputTokens": 2048}}
 
-              data = {
-                  "contents": [{"parts": [{"text": prompt}]}],
-                  "generationConfig": {"temperature": 0.87, "topP": 0.92, "maxOutputTokens": 4096},
-                  "safetySettings": [{"category": c, "threshold": "BLOCK_NONE"} for c in ["HARM_CATEGORY_HARASSMENT","HARM_CATEGORY_HATE_SPEECH","HARM_CATEGORY_SEXUALLY_EXPLICIT","HARM_CATEGORY_DANGEROUS_CONTENT"]]
-              }
+              r = requests.post(url, headers={"Content-Type": "application/json"}, json=data)
+              text = r.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
 
-              response = requests.post(url, headers={"Content-Type": "application/json"}, json=data)
-              if response.status_code != 200:
-                  raise Exception(f"Error en bloque {block}")
-
-              text = response.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
-
-              filename = f"capitulo_{chapter_num:02d}_bloque_{block}.txt"
-
-              with open(filename, "w", encoding="utf-8") as f:
+              with open(f"capitulo_{chapter_num:02d}_bloque_{b}.txt", "w", encoding="utf-8") as f:
                   f.write(text)
 
-              print(f"✅ Capítulo {chapter_num} - Bloque {block} generado")
-              time.sleep(10)
-
-          print(f"🎉 Capítulo {chapter_num} completo: {title}")
+              print(f"Bloque {b} listo")
+              time.sleep(8)
           EOF
 
-          python3 generate_chapter.py
+          python3 generate.py
         shell: bash
 
       - name: Commit y Push
@@ -113,5 +71,5 @@ jobs:
           git config --global user.name "AudiolibroBot"
           git config --global user.email "bot@yordev.ai"
           git add capitulo_*.txt
-          git commit -m "🤖 Nuevo capítulo autoayuda generado - $(date '+%Y-%m-%d %H:%M')" || echo "No hay cambios"
+          git commit -m "Nuevo capítulo generado automáticamente" || echo "Sin cambios"
           git push
