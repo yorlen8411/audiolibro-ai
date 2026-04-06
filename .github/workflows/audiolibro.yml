@@ -1,4 +1,4 @@
-name: Máquina Autoayuda - Groq Llama-3.3-70b (Prompt Máximo Optimizado)
+name: Máquina Autoayuda - Groq Llama-3.3-70b (Prompt Máximo)
 
 on:
   schedule:
@@ -54,28 +54,30 @@ jobs:
 
           print(f"🚀 Capítulo {chapter_num} - Bloque {block_num}: {title}")
 
-          prompt = f"""Eres un escritor maestro de audiolibros premium de autoayuda para Applio TTS y YouTube.
+          prompt = f"""Eres un escritor maestro de guiones spoken-word para audiolibros premium de autoayuda.
 
           Genera **solo** el BLOQUE {block_num} de 7 del capítulo titulado "{title}".
 
-          ESTILO OBLIGATORIO (copia este estilo exactamente):
-          - Frases muy cortas y potentes (máximo 12 palabras por frase).
-          - Muchas pausas dramáticas con "..." (usa varias por bloque).
+          ESTILO OBLIGATORIO - COPIA ESTE ESTILO EXACTAMENTE:
+          - Frases cortísimas (8-14 palabras máximo).
+          - Muchas pausas dramáticas con "..." (3 o más por bloque).
           - Saltos de línea frecuentes.
-          - Muchas preguntas retóricas dirigidas al oyente ("¿...?", "tú", "te").
-          - Construye tensión emocional progresiva (el oyente debe sentir presión y profundidad).
-          - Lenguaje sensorial, poético y cinematográfico.
-          - Ritmo lento, hipnótico y spoken-word (como un monólogo emocional intenso).
+          - Muchas preguntas retóricas fuertes dirigidas al oyente.
+          - Construye tensión emocional progresiva (el oyente debe sentir el peso).
+          - Lenguaje sensorial, profundo y cinematográfico.
+          - Ritmo lento, hipnótico y emocional como un monólogo íntimo.
 
-          Ejemplo del estilo deseado:
+          Ejemplo del estilo exacto que quiero:
           Te sientes atrapado...
           ...en una jaula invisible.
           ¿Quién la construyó?
           ...tú mismo.
           Con cada miedo que aceptaste...
-          ...con cada duda que repetiste.
+          ...con cada duda que repetiste en silencio.
+          ¿Te duele el pecho?
+          ...porque sabes la verdad.
 
-          Ahora genera el bloque {block_num} siguiendo exactamente este estilo.
+          Ahora genera el bloque {block_num} siguiendo exactamente este estilo y tono.
           Mantén coherencia con el tema del capítulo.
 
           Responde **ÚNICAMENTE** con el texto puro del bloque.
@@ -85,7 +87,7 @@ jobs:
           data = {
               "model": "llama-3.3-70b-versatile",
               "messages": [{"role": "user", "content": prompt}],
-              "temperature": 0.68,      # Bajada para mayor control y consistencia
+              "temperature": 0.65,      # Muy baja para máxima consistencia
               "max_tokens": 850
           }
           headers = {
@@ -117,5 +119,5 @@ jobs:
           git config --global user.name "AudiolibroBot"
           git config --global user.email "bot@yordev.ai"
           git add capitulo_*.txt
-          git commit -m "🤖 Bloque Llama-3.3-70b optimizado - $(date '+%Y-%m-%d %H:%M')" || echo "No hay cambios"
+          git commit -m "🤖 Bloque Llama-3.3-70b máximo optimizado - $(date '+%Y-%m-%d %H:%M')" || echo "No hay cambios"
           git push
