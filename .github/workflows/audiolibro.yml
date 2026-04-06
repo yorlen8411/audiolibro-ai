@@ -1,4 +1,4 @@
-name: Máquina Autoayuda - Groq Qwen3-32b (Anti-Thinking + Mejora)
+name: Máquina Autoayuda - Groq Qwen3-32b (Anti-Thinking v8)
 
 on:
   schedule:
@@ -25,7 +25,7 @@ jobs:
       - name: Instalar dependencias
         run: pip install requests
 
-      - name: Generar Bloque con Pipeline Anti-Thinking
+      - name: Generar 1 Bloque con Pipeline Anti-Thinking
         run: |
           cat << 'EOF' > generate.py
           import requests, os, glob, time
@@ -36,7 +36,6 @@ jobs:
               print("❌ GROQ_API_KEY no encontrada")
               exit(1)
 
-          # Calcular siguiente bloque
           existing = sorted(glob.glob("capitulo_*_bloque_*.txt"))
           if not existing:
               chapter_num = 1
@@ -57,7 +56,7 @@ jobs:
 
           # Paso 1: Borrador
           prompt_borrador = f"""Genera el BLOQUE {block_num} de 7 del capítulo "{title}" de autoayuda.
-          Frases cortas, pausas con "...", preguntas retóricas, tono emocional profundo."""
+          Frases cortas, pausas con "...", preguntas retóricas, tono emocional."""
 
           # Paso 2: Refinamiento fuerte
           prompt_refinar = f"""Reescribe el siguiente texto para que sea mucho más poderoso, emocional y adictivo para spoken-word premium.
@@ -66,10 +65,10 @@ jobs:
           - Frases extremadamente cortas (8-14 palabras máximo)
           - Muchas pausas dramáticas con "..."
           - Muchas preguntas retóricas fuertes
-          - Aumenta la tensión emocional progresiva
-          - Hazlo sensorial y cinematográfico
+          - Aumenta tensión emocional progresiva
+          - Lenguaje sensorial y cinematográfico
           - Ritmo hipnótico y profundo
-          - Responde SOLO con el texto mejorado. NADA más. Sin <think>, sin explicaciones, sin razonamiento.
+          - Responde SOLO con el texto mejorado. NADA más. Sin <think>, sin explicaciones, sin títulos, sin razonamiento.
 
           Texto original:
           {{draft}}
@@ -94,10 +93,15 @@ jobs:
           response = requests.post(url, headers=headers, json=data, timeout=40)
           final_text = response.json()["choices"][0]["message"]["content"].strip()
 
-          # Limpieza AGRESIVA contra <think>
-          if "<think>" in final_text:
+          # Limpieza AGRESIVA
+          if "<think>" in final_text or "</think>" in final_text:
               final_text = final_text.split("</think>")[-1].strip()
           final_text = final_text.replace("<think>", "").replace("</think>", "").strip()
+
+          # Eliminar cualquier título o "BLOQUE" que se escape
+          lines = final_text.split('\n')
+          clean_lines = [line for line in lines if not line.strip().upper().startswith("BLOQUE") and not line.strip().startswith("**")]
+          final_text = '\n'.join(clean_lines).strip()
 
           filename = f"capitulo_{chapter_num:02d}_bloque_{block_num}.txt"
           with open(filename, "w", encoding="utf-8") as f:
@@ -114,5 +118,5 @@ jobs:
           git config --global user.name "AudiolibroBot"
           git config --global user.email "bot@yordev.ai"
           git add capitulo_*.txt
-          git commit -m "🤖 Bloque Qwen3-32b pipeline v7 - $(date '+%Y-%m-%d %H:%M')" || echo "No hay cambios"
+          git commit -m "🤖 Bloque Qwen3-32b pipeline v8 - $(date '+%Y-%m-%d %H:%M')" || echo "No hay cambios"
           git push
