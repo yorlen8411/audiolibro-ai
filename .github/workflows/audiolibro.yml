@@ -1,4 +1,4 @@
-name: Máquina Autoayuda - Groq Llama-3.3-70b (Prompt Máximo)
+name: Máquina Autoayuda - Groq Qwen3-32b (Estilo Premium)
 
 on:
   schedule:
@@ -25,7 +25,7 @@ jobs:
       - name: Instalar dependencias
         run: pip install requests
 
-      - name: Generar 1 Bloque con Llama-3.3-70b (Máximo Optimizado)
+      - name: Generar 1 Bloque con Qwen3-32b (Optimizado)
         run: |
           cat << 'EOF' > generate.py
           import requests, os, glob, time
@@ -58,14 +58,14 @@ jobs:
 
           Genera **solo** el BLOQUE {block_num} de 7 del capítulo titulado "{title}".
 
-          ESTILO OBLIGATORIO - COPIA ESTE ESTILO EXACTAMENTE:
-          - Frases cortísimas (8-14 palabras máximo).
-          - Muchas pausas dramáticas con "..." (3 o más por bloque).
+          ESTILO OBLIGATORIO - COPIA ESTE ESTILO CON PRECISIÓN:
+          - Frases muy cortas (8-14 palabras máximo).
+          - Muchas pausas dramáticas con "..." (usa varias por bloque).
           - Saltos de línea frecuentes.
-          - Muchas preguntas retóricas fuertes dirigidas al oyente.
-          - Construye tensión emocional progresiva (el oyente debe sentir el peso).
+          - Muchas preguntas retóricas potentes dirigidas al oyente ("¿...?", "tú", "te").
+          - Construye tensión emocional progresiva (el oyente debe sentir el peso y la presión).
           - Lenguaje sensorial, profundo y cinematográfico.
-          - Ritmo lento, hipnótico y emocional como un monólogo íntimo.
+          - Ritmo lento, hipnótico y emocional, como un monólogo íntimo y poderoso.
 
           Ejemplo del estilo exacto que quiero:
           Te sientes atrapado...
@@ -75,7 +75,7 @@ jobs:
           Con cada miedo que aceptaste...
           ...con cada duda que repetiste en silencio.
           ¿Te duele el pecho?
-          ...porque sabes la verdad.
+          ...porque sabes la verdad que escondes.
 
           Ahora genera el bloque {block_num} siguiendo exactamente este estilo y tono.
           Mantén coherencia con el tema del capítulo.
@@ -85,10 +85,10 @@ jobs:
 
           url = "https://api.groq.com/openai/v1/chat/completions"
           data = {
-              "model": "llama-3.3-70b-versatile",
+              "model": "qwen/qwen3-32b",
               "messages": [{"role": "user", "content": prompt}],
-              "temperature": 0.65,      # Muy baja para máxima consistencia
-              "max_tokens": 850
+              "temperature": 0.70,
+              "max_tokens": 900
           }
           headers = {
               "Authorization": f"Bearer {API_KEY}",
@@ -119,5 +119,5 @@ jobs:
           git config --global user.name "AudiolibroBot"
           git config --global user.email "bot@yordev.ai"
           git add capitulo_*.txt
-          git commit -m "🤖 Bloque Llama-3.3-70b máximo optimizado - $(date '+%Y-%m-%d %H:%M')" || echo "No hay cambios"
+          git commit -m "🤖 Bloque Qwen3-32b optimizado - $(date '+%Y-%m-%d %H:%M')" || echo "No hay cambios"
           git push
