@@ -1,8 +1,8 @@
-name: Máquina Autoayuda - Groq Qwen3-32b (Automejora Progresiva v5)
+name: Máquina Autoayuda - Groq Qwen3-32b (Pipeline de Mejora)
 
 on:
   schedule:
-    - cron: "*/12 * * * *"   
+    - cron: "*/15 * * * *"   
   workflow_dispatch:
 
 permissions:
@@ -25,7 +25,7 @@ jobs:
       - name: Instalar dependencias
         run: pip install requests
 
-      - name: Generar 1 Bloque con Automejora
+      - name: Generar + Refinar Bloque (Pipeline)
         run: |
           cat << 'EOF' > generate.py
           import requests, os, glob, time
@@ -54,68 +54,49 @@ jobs:
 
           print(f"🚀 Capítulo {chapter_num} - Bloque {block_num}: {title}")
 
-          # Prompt con automejora reforzada
-          prompt = f"""Eres un escritor maestro de guiones spoken-word para audiolibros premium de autoayuda.
+          # Paso 1: Generación inicial (Borrador)
+          prompt1 = f"""Genera el BLOQUE {block_num} de 7 del capítulo "{title}" de autoayuda.
+          Frases cortas, pausas con "...", preguntas retóricas, tono emocional."""
 
-          Tu misión es generar el BLOQUE {block_num} de 7 del capítulo titulado "{title}".
+          # Paso 2: Refinamiento (Mejora)
+          prompt2 = f"""Reescribe el siguiente texto para que sea mucho más poderoso, emocional y adictivo para voz spoken-word.
 
-          REGLAS DE AUTOMEJORA PROGRESIVA:
-          - Cada bloque que generes debe ser **claramente mejor** que el anterior en calidad, ritmo, tensión emocional, profundidad y estilo spoken-word.
-          - Mejora constantemente: más impacto emocional, mejor flujo, más sensorialidad y preguntas retóricas más potentes.
-          - Recuerda el estilo ideal y supéralo en cada nueva generación.
+          Reglas de mejora:
+          - Frases más cortas y impactantes
+          - Más pausas dramáticas con "..."
+          - Más preguntas retóricas fuertes
+          - Aumenta la tensión emocional progresiva
+          - Hazlo más cinematográfico y sensorial
+          - Ritmo hipnótico y profundo
 
-          ESTILO OBLIGATORIO:
-          - Frases muy cortas (8-14 palabras máximo).
-          - Muchas pausas dramáticas con "...".
-          - Saltos de línea frecuentes.
-          - Muchas preguntas retóricas fuertes dirigidas al oyente.
-          - Construye tensión emocional progresiva.
-          - Lenguaje sensorial, cinematográfico y profundo.
-          - Ritmo lento, hipnótico y emocional.
+          Texto original:
+          {text if 'text' in locals() else ''}
 
-          Ejemplo del estilo que debes superar:
-          Te sientes atrapado...
-          ...en una jaula invisible.
-          ¿Quién la construyó?
-          ...tú mismo.
-          Con cada miedo que aceptaste...
-          ...con cada duda que repetiste en silencio.
-          ¿Te duele el pecho?
-          ...porque sabes la verdad que escondes.
+          Responde solo con el texto mejorado."""
 
-          Ahora genera solo el bloque {block_num} siguiendo este estilo y **mejorándolo**.
-          Responde **ÚNICAMENTE** con el texto puro del bloque. Nada más."""
-
+          # Primera llamada (borrador)
           url = "https://api.groq.com/openai/v1/chat/completions"
           data = {
               "model": "qwen/qwen3-32b",
-              "messages": [{"role": "user", "content": prompt}],
-              "temperature": 0.62,
-              "max_tokens": 900
+              "messages": [{"role": "user", "content": prompt1}],
+              "temperature": 0.75,
+              "max_tokens": 800
           }
-          headers = {
-              "Authorization": f"Bearer {API_KEY}",
-              "Content-Type": "application/json"
-          }
+          headers = {"Authorization": f"Bearer {API_KEY}", "Content-Type": "application/json"}
 
           response = requests.post(url, headers=headers, json=data, timeout=40)
+          draft = response.json()["choices"][0]["message"]["content"].strip()
 
-          if response.status_code != 200:
-              print("Error:")
-              print(response.text)
-              exit(1)
-
-          text = response.json()["choices"][0]["message"]["content"].strip()
-
-          # Limpieza extra
-          if "<think>" in text or "</think>" in text:
-              text = text.split("</think>")[-1].strip()
+          # Segunda llamada (refinamiento)
+          data["messages"] = [{"role": "user", "content": prompt2.format(text=draft)}]
+          response = requests.post(url, headers=headers, json=data, timeout=40)
+          final_text = response.json()["choices"][0]["message"]["content"].strip()
 
           filename = f"capitulo_{chapter_num:02d}_bloque_{block_num}.txt"
           with open(filename, "w", encoding="utf-8") as f:
-              f.write(text)
+              f.write(final_text)
 
-          print(f"✅ Guardado: {filename} ({len(text.split())} palabras)")
+          print(f"✅ Guardado (refinado): {filename} ({len(final_text.split())} palabras)")
           EOF
 
           python3 generate.py
@@ -126,5 +107,5 @@ jobs:
           git config --global user.name "AudiolibroBot"
           git config --global user.email "bot@yordev.ai"
           git add capitulo_*.txt
-          git commit -m "🤖 Bloque Qwen3-32b con automejora v5 - $(date '+%Y-%m-%d %H:%M')" || echo "No hay cambios"
+          git commit -m "🤖 Bloque Qwen3-32b con pipeline de mejora - $(date '+%Y-%m-%d %H:%M')" || echo "No hay cambios"
           git push
