@@ -1,4 +1,4 @@
-name: Máquina Autoayuda - Groq Qwen3-32b (Prompt Optimizado)
+name: Máquina Autoayuda - Groq Qwen3-32b (Prompt Optimizado v3)
 
 on:
   schedule:
@@ -54,21 +54,21 @@ jobs:
 
           print(f"🚀 Capítulo {chapter_num} - Bloque {block_num}: {title}")
 
-          prompt = f"""Eres un escritor experto en guiones spoken-word para audiolibros premium de autoayuda.
+          prompt = f"""Eres un escritor maestro de guiones spoken-word para audiolibros premium de autoayuda.
 
           Tarea: Genera **solo** el BLOQUE {block_num} de 7 del capítulo titulado "{title}".
 
-          REGLAS ESTRICTAS:
-          - Responde ÚNICAMENTE con el texto puro del bloque. Nada más. No uses <think>, razonamiento, explicaciones ni nada interno.
-          - Frases muy cortas (máximo 12 palabras por frase).
+          REGLAS ESTRICTAS (sigue al pie de la letra):
+          - Responde ÚNICAMENTE con el texto puro del bloque. Nada más. No uses <think>, razonamiento, explicaciones, ni ninguna palabra fuera del texto.
+          - Frases muy cortas (8-14 palabras máximo).
           - Muchas pausas dramáticas con "...".
           - Saltos de línea frecuentes.
-          - Muchas preguntas retóricas dirigidas al oyente ("¿...?", "tú", "te").
+          - Muchas preguntas retóricas fuertes dirigidas al oyente.
           - Construye tensión emocional progresiva.
           - Lenguaje sensorial y cinematográfico.
           - Ritmo lento, hipnótico y emocional.
 
-          Ejemplo del estilo deseado:
+          Ejemplo del estilo exacto que quiero:
           Te sientes atrapado...
           ...en una jaula invisible.
           ¿Quién la construyó?
@@ -79,7 +79,7 @@ jobs:
           ...porque sabes la verdad que escondes.
 
           Ahora genera solo el bloque {block_num} siguiendo exactamente este estilo.
-          Mantén coherencia con el capítulo.
+          Mantén coherencia con el tema del capítulo.
 
           Responde solo con el texto puro del bloque."""
 
@@ -87,8 +87,8 @@ jobs:
           data = {
               "model": "qwen/qwen3-32b",
               "messages": [{"role": "user", "content": prompt}],
-              "temperature": 0.68,
-              "max_tokens": 900
+              "temperature": 0.65,
+              "max_tokens": 850
           }
           headers = {
               "Authorization": f"Bearer {API_KEY}",
@@ -105,7 +105,7 @@ jobs:
           text = response.json()["choices"][0]["message"]["content"].strip()
 
           # Limpieza extra por si sale thinking
-          if "<think>" in text:
+          if "<think>" in text or "</think>" in text:
               text = text.split("</think>")[-1].strip()
 
           filename = f"capitulo_{chapter_num:02d}_bloque_{block_num}.txt"
@@ -123,5 +123,5 @@ jobs:
           git config --global user.name "AudiolibroBot"
           git config --global user.email "bot@yordev.ai"
           git add capitulo_*.txt
-          git commit -m "🤖 Bloque Qwen3-32b optimizado - $(date '+%Y-%m-%d %H:%M')" || echo "No hay cambios"
+          git commit -m "🤖 Bloque Qwen3-32b optimizado v3 - $(date '+%Y-%m-%d %H:%M')" || echo "No hay cambios"
           git push
