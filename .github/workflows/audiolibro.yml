@@ -1,4 +1,4 @@
-name: Máquina Autoayuda - Groq Qwen3-32b (Estilo Premium)
+name: Máquina Autoayuda - Groq Qwen3-32b (Sin Thinking)
 
 on:
   schedule:
@@ -25,7 +25,7 @@ jobs:
       - name: Instalar dependencias
         run: pip install requests
 
-      - name: Generar 1 Bloque con Qwen3-32b (Optimizado)
+      - name: Generar 1 Bloque con Qwen3-32b (Sin Thinking)
         run: |
           cat << 'EOF' > generate.py
           import requests, os, glob, time
@@ -58,16 +58,21 @@ jobs:
 
           Genera **solo** el BLOQUE {block_num} de 7 del capítulo titulado "{title}".
 
-          ESTILO OBLIGATORIO - COPIA ESTE ESTILO CON PRECISIÓN:
-          - Frases muy cortas (8-14 palabras máximo).
-          - Muchas pausas dramáticas con "..." (usa varias por bloque).
-          - Saltos de línea frecuentes.
-          - Muchas preguntas retóricas potentes dirigidas al oyente ("¿...?", "tú", "te").
-          - Construye tensión emocional progresiva (el oyente debe sentir el peso y la presión).
-          - Lenguaje sensorial, profundo y cinematográfico.
-          - Ritmo lento, hipnótico y emocional, como un monólogo íntimo y poderoso.
+          REGLAS ESTRICTAS:
+          - Responde ÚNICAMENTE con el texto del bloque. NADA más.
+          - NO uses <think>, </think>, razonamiento, explicaciones ni nada interno.
+          - NO menciones que estás generando un bloque.
+          - Solo el texto puro listo para voz.
 
-          Ejemplo del estilo exacto que quiero:
+          ESTILO OBLIGATORIO:
+          - Frases muy cortas (8-14 palabras máximo).
+          - Muchas pausas dramáticas con "...".
+          - Saltos de línea frecuentes.
+          - Muchas preguntas retóricas ("¿...?", "tú", "te").
+          - Construye tensión emocional progresiva.
+          - Ritmo lento, hipnótico y spoken-word emocional.
+
+          Ejemplo del estilo exacto:
           Te sientes atrapado...
           ...en una jaula invisible.
           ¿Quién la construyó?
@@ -77,18 +82,15 @@ jobs:
           ¿Te duele el pecho?
           ...porque sabes la verdad que escondes.
 
-          Ahora genera el bloque {block_num} siguiendo exactamente este estilo y tono.
-          Mantén coherencia con el tema del capítulo.
-
-          Responde **ÚNICAMENTE** con el texto puro del bloque.
-          No agregues títulos, números ni explicaciones."""
+          Ahora genera solo el bloque {block_num} siguiendo exactamente este estilo.
+          Responde solo con el texto puro."""
 
           url = "https://api.groq.com/openai/v1/chat/completions"
           data = {
               "model": "qwen/qwen3-32b",
               "messages": [{"role": "user", "content": prompt}],
-              "temperature": 0.70,
-              "max_tokens": 900
+              "temperature": 0.65,
+              "max_tokens": 850
           }
           headers = {
               "Authorization": f"Bearer {API_KEY}",
@@ -103,6 +105,10 @@ jobs:
               exit(1)
 
           text = response.json()["choices"][0]["message"]["content"].strip()
+
+          # Eliminar cualquier posible <think> que se escape
+          if "<think>" in text:
+              text = text.split("</think>")[-1].strip()
 
           filename = f"capitulo_{chapter_num:02d}_bloque_{block_num}.txt"
           with open(filename, "w", encoding="utf-8") as f:
