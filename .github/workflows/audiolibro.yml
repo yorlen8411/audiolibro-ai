@@ -36,6 +36,7 @@ jobs:
               print("❌ GROQ_API_KEY no encontrada")
               exit(1)
 
+          # Calcular siguiente bloque
           existing = sorted(glob.glob("capitulo_*_bloque_*.txt"))
           if not existing:
               chapter_num = 1
@@ -54,41 +55,41 @@ jobs:
 
           print(f"🚀 Capítulo {chapter_num} - Bloque {block_num}: {title}")
 
-          # Paso 1: Generación inicial (Borrador)
-          prompt1 = f"""Genera el BLOQUE {block_num} de 7 del capítulo "{title}" de autoayuda.
-          Frases cortas, pausas con "...", preguntas retóricas, tono emocional."""
+          # Paso 1: Borrador inicial
+          prompt_borrador = f"""Genera el BLOQUE {block_num} de 7 del capítulo "{title}" de autoayuda.
+          Usa frases cortas, pausas con "...", preguntas retóricas y tono emocional."""
 
-          # Paso 2: Refinamiento (Mejora)
-          prompt2 = f"""Reescribe el siguiente texto para que sea mucho más poderoso, emocional y adictivo para voz spoken-word.
+          # Paso 2: Refinamiento (mejora emocional y ritmo)
+          prompt_refinar = f"""Reescribe el siguiente texto para que sea mucho más poderoso, emocional y adictivo para voz spoken-word premium.
 
           Reglas de mejora:
           - Frases más cortas y impactantes
           - Más pausas dramáticas con "..."
           - Más preguntas retóricas fuertes
           - Aumenta la tensión emocional progresiva
-          - Hazlo más cinematográfico y sensorial
-          - Ritmo hipnótico y profundo
+          - Hazlo más sensorial y cinematográfico
+          - Mejora el ritmo para que suene hipnótico cuando se lea en voz alta
 
           Texto original:
-          {text if 'text' in locals() else ''}
+          {{draft}}
 
-          Responde solo con el texto mejorado."""
+          Responde solo con el texto mejorado. Nada más."""
 
-          # Primera llamada (borrador)
           url = "https://api.groq.com/openai/v1/chat/completions"
+          headers = {"Authorization": f"Bearer {API_KEY}", "Content-Type": "application/json"}
+
+          # Primera llamada - Borrador
           data = {
               "model": "qwen/qwen3-32b",
-              "messages": [{"role": "user", "content": prompt1}],
+              "messages": [{"role": "user", "content": prompt_borrador}],
               "temperature": 0.75,
               "max_tokens": 800
           }
-          headers = {"Authorization": f"Bearer {API_KEY}", "Content-Type": "application/json"}
-
           response = requests.post(url, headers=headers, json=data, timeout=40)
           draft = response.json()["choices"][0]["message"]["content"].strip()
 
-          # Segunda llamada (refinamiento)
-          data["messages"] = [{"role": "user", "content": prompt2.format(text=draft)}]
+          # Segunda llamada - Refinamiento
+          data["messages"] = [{"role": "user", "content": prompt_refinar.format(draft=draft)}]
           response = requests.post(url, headers=headers, json=data, timeout=40)
           final_text = response.json()["choices"][0]["message"]["content"].strip()
 
