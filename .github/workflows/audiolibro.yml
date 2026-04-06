@@ -1,4 +1,4 @@
-name: Máquina Autoayuda - Groq (1 Bloque Seguro)
+name: Máquina Autoayuda - Groq (Estilo Premium para Applio)
 
 on:
   schedule:
@@ -25,7 +25,7 @@ jobs:
       - name: Instalar dependencias
         run: pip install requests
 
-      - name: Generar 1 Bloque con Groq
+      - name: Generar 1 Bloque con Groq (Estilo Premium)
         run: |
           cat << 'EOF' > generate.py
           import requests, os, glob, time
@@ -49,29 +49,48 @@ jobs:
                   chapter_num += 1
                   block_num = 1
 
-          titles = ["El Ancla Invisible", "La Jaula que Tú Construiste", "El Precio de Seguir Cómodo", "La Identidad que Te Mata Lentamente", "Por Qué Saboteas Tu Propio Éxito", "El Miedo que Nadie Habla", "Cuando Dejas de Mentirte a Ti Mismo"]
+          titles = ["El Ancla Invisible", "La Jaula que Tú Construiste", "El Precio de Seguir Cómodo", "La Identidad que Te Mata Lentamente", "Por Qué Saboteas Tu Propio Éxito", "El Miedo que Nadie Habla", "Cuando Dejas de Mentirte a Ti Mismo", "La Versión de Ti que Está Esperando", "El Vacío que el Éxito No Llena"]
 
           title = titles[(chapter_num-1) % len(titles)]
 
           print(f"🚀 Capítulo {chapter_num} - Bloque {block_num}: {title}")
 
-          prompt = f"""Genera el BLOQUE {block_num} de 7 del capítulo de autoayuda "{title}".
-          Estilo spoken-word premium: frases muy cortas, muchas pausas con "...", saltos de línea frecuentes, habla directo al oyente ("tú"), tono emocional y motivacional."""
+          prompt = f"""Eres un escritor experto en guiones de audiolibros premium de autoayuda para Applio TTS y YouTube.
+
+          Genera **solo** el BLOQUE {block_num} de 7 del capítulo titulado "{title}".
+
+          Estilo obligatorio (muy importante):
+          - Frases extremadamente cortas (8-16 palabras máximo).
+          - Muchas pausas dramáticas con "...".
+          - Saltos de línea frecuentes (uno por frase o pausa).
+          - Muchas preguntas retóricas dirigidas al oyente ("tú", "te").
+          - Construye tensión emocional progresiva.
+          - Lenguaje sensorial y cinematográfico.
+          - Ritmo spoken-word lento, hipnótico y adictivo.
+          - Habla como si estuvieras susurrando una verdad profunda al oído del oyente.
+
+          Mantén coherencia con el tema general del capítulo.
+          Este es el bloque {block_num} de exactamente 7.
+
+          Responde **ÚNICAMENTE** con el texto puro del bloque. 
+          No agregues títulos, números ni explicaciones. Solo el texto listo para TTS."""
 
           url = "https://api.groq.com/openai/v1/chat/completions"
           data = {
               "model": "llama-3.3-70b-versatile",
               "messages": [{"role": "user", "content": prompt}],
-              "temperature": 0.85,
+              "temperature": 0.83,
               "max_tokens": 1100
           }
-          headers = {"Authorization": f"Bearer {API_KEY}", "Content-Type": "application/json"}
+          headers = {
+              "Authorization": f"Bearer {API_KEY}",
+              "Content-Type": "application/json"
+          }
 
           response = requests.post(url, headers=headers, json=data, timeout=40)
-          print(f"Status: {response.status_code}")
 
           if response.status_code != 200:
-              print("Error completo:")
+              print("Error:")
               print(response.text)
               exit(1)
 
@@ -92,5 +111,5 @@ jobs:
           git config --global user.name "AudiolibroBot"
           git config --global user.email "bot@yordev.ai"
           git add capitulo_*.txt
-          git commit -m "🤖 Bloque Groq generado - $(date '+%Y-%m-%d %H:%M')" || echo "No hay cambios"
+          git commit -m "🤖 Bloque Groq estilo premium generado - $(date '+%Y-%m-%d %H:%M')" || echo "No hay cambios"
           git push
