@@ -1,8 +1,8 @@
-name: Máquina Autoayuda - Groq (Estilo Premium para Applio)
+name: Máquina Autoayuda - Groq Llama-3.3-70b (Estilo Premium)
 
 on:
   schedule:
-    - cron: "*/12 * * * *"   # Cada 12 minutos
+    - cron: "*/12 * * * *"   
   workflow_dispatch:
 
 permissions:
@@ -25,7 +25,7 @@ jobs:
       - name: Instalar dependencias
         run: pip install requests
 
-      - name: Generar 1 Bloque con Groq (Estilo Premium)
+      - name: Generar 1 Bloque con Llama-3.3-70b (Prompt Optimizado)
         run: |
           cat << 'EOF' > generate.py
           import requests, os, glob, time
@@ -55,32 +55,32 @@ jobs:
 
           print(f"🚀 Capítulo {chapter_num} - Bloque {block_num}: {title}")
 
-          prompt = f"""Eres un escritor experto en guiones de audiolibros premium de autoayuda para Applio TTS y YouTube.
+          prompt = f"""Eres un escritor experto en audiolibros de autoayuda premium para Applio TTS y YouTube spoken-word.
 
           Genera **solo** el BLOQUE {block_num} de 7 del capítulo titulado "{title}".
 
-          Estilo obligatorio (muy importante):
-          - Frases extremadamente cortas (8-16 palabras máximo).
-          - Muchas pausas dramáticas con "...".
-          - Saltos de línea frecuentes (uno por frase o pausa).
-          - Muchas preguntas retóricas dirigidas al oyente ("tú", "te").
-          - Construye tensión emocional progresiva.
-          - Lenguaje sensorial y cinematográfico.
-          - Ritmo spoken-word lento, hipnótico y adictivo.
-          - Habla como si estuvieras susurrando una verdad profunda al oído del oyente.
+          REGLAS ESTRICTAS DE ESTILO (sigue esto al pie de la letra):
+          - Frases muy cortas, máximo 12-16 palabras por frase.
+          - Muchas pausas dramáticas usando "...".
+          - Saltos de línea frecuentes (uno por idea o pausa).
+          - Usa muchas preguntas retóricas dirigidas al oyente ("tú", "te", "¿...?" ).
+          - Construye tensión emocional progresiva en cada bloque.
+          - Lenguaje sensorial, cinematográfico y profundo.
+          - Ritmo hipnótico, lento y adictivo, como si estuvieras susurrando una verdad poderosa al oído del oyente.
+          - Evita frases largas y párrafos densos.
 
-          Mantén coherencia con el tema general del capítulo.
-          Este es el bloque {block_num} de exactamente 7.
+          Este es el bloque {block_num} de exactamente 7 bloques del capítulo.
+          Mantén coherencia interna y prepara sutilmente el siguiente bloque.
 
-          Responde **ÚNICAMENTE** con el texto puro del bloque. 
-          No agregues títulos, números ni explicaciones. Solo el texto listo para TTS."""
+          Responde **ÚNICAMENTE** con el texto puro del bloque.
+          No agregues títulos, números, explicaciones ni nada más."""
 
           url = "https://api.groq.com/openai/v1/chat/completions"
           data = {
               "model": "llama-3.3-70b-versatile",
               "messages": [{"role": "user", "content": prompt}],
-              "temperature": 0.83,
-              "max_tokens": 1100
+              "temperature": 0.78,        # Bajé un poco para más control y consistencia
+              "max_tokens": 950
           }
           headers = {
               "Authorization": f"Bearer {API_KEY}",
@@ -90,7 +90,7 @@ jobs:
           response = requests.post(url, headers=headers, json=data, timeout=40)
 
           if response.status_code != 200:
-              print("Error:")
+              print("Error Groq:")
               print(response.text)
               exit(1)
 
@@ -111,5 +111,5 @@ jobs:
           git config --global user.name "AudiolibroBot"
           git config --global user.email "bot@yordev.ai"
           git add capitulo_*.txt
-          git commit -m "🤖 Bloque Groq estilo premium generado - $(date '+%Y-%m-%d %H:%M')" || echo "No hay cambios"
+          git commit -m "🤖 Bloque Llama-3.3-70b premium generado - $(date '+%Y-%m-%d %H:%M')" || echo "No hay cambios"
           git push
