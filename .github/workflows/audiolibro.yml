@@ -1,4 +1,4 @@
-name: Máquina Autoayuda - Groq Qwen3-32b (Pipeline Mejora v6)
+name: Máquina Autoayuda - Groq Qwen3-32b (Anti-Thinking + Mejora)
 
 on:
   schedule:
@@ -25,7 +25,7 @@ jobs:
       - name: Instalar dependencias
         run: pip install requests
 
-      - name: Generar + Refinar Bloque (Pipeline v6)
+      - name: Generar Bloque con Pipeline Anti-Thinking
         run: |
           cat << 'EOF' > generate.py
           import requests, os, glob, time
@@ -36,6 +36,7 @@ jobs:
               print("❌ GROQ_API_KEY no encontrada")
               exit(1)
 
+          # Calcular siguiente bloque
           existing = sorted(glob.glob("capitulo_*_bloque_*.txt"))
           if not existing:
               chapter_num = 1
@@ -56,24 +57,24 @@ jobs:
 
           # Paso 1: Borrador
           prompt_borrador = f"""Genera el BLOQUE {block_num} de 7 del capítulo "{title}" de autoayuda.
-          Frases cortas, pausas con "...", preguntas retóricas, tono emocional."""
+          Frases cortas, pausas con "...", preguntas retóricas, tono emocional profundo."""
 
-          # Paso 2: Refinamiento fuerte (automejora)
+          # Paso 2: Refinamiento fuerte
           prompt_refinar = f"""Reescribe el siguiente texto para que sea mucho más poderoso, emocional y adictivo para spoken-word premium.
 
-          Reglas estrictas de mejora:
+          Reglas estrictas:
           - Frases extremadamente cortas (8-14 palabras máximo)
           - Muchas pausas dramáticas con "..."
           - Muchas preguntas retóricas fuertes
           - Aumenta la tensión emocional progresiva
-          - Hazlo más sensorial y cinematográfico
-          - Mejora el ritmo para que suene hipnótico y profundo cuando se lea en voz alta
-          - Elimina cualquier razonamiento o explicación
+          - Hazlo sensorial y cinematográfico
+          - Ritmo hipnótico y profundo
+          - Responde SOLO con el texto mejorado. NADA más. Sin <think>, sin explicaciones, sin razonamiento.
 
           Texto original:
           {{draft}}
 
-          Responde SOLO con el texto mejorado. Nada más. Sin <think>, sin explicaciones."""
+          Responde solo con el texto mejorado."""
 
           url = "https://api.groq.com/openai/v1/chat/completions"
           headers = {"Authorization": f"Bearer {API_KEY}", "Content-Type": "application/json"}
@@ -93,8 +94,8 @@ jobs:
           response = requests.post(url, headers=headers, json=data, timeout=40)
           final_text = response.json()["choices"][0]["message"]["content"].strip()
 
-          # Limpieza fuerte contra <think>
-          if "<think>" in final_text or "</think>" in final_text:
+          # Limpieza AGRESIVA contra <think>
+          if "<think>" in final_text:
               final_text = final_text.split("</think>")[-1].strip()
           final_text = final_text.replace("<think>", "").replace("</think>", "").strip()
 
@@ -113,5 +114,5 @@ jobs:
           git config --global user.name "AudiolibroBot"
           git config --global user.email "bot@yordev.ai"
           git add capitulo_*.txt
-          git commit -m "🤖 Bloque Qwen3-32b con pipeline v6 - $(date '+%Y-%m-%d %H:%M')" || echo "No hay cambios"
+          git commit -m "🤖 Bloque Qwen3-32b pipeline v7 - $(date '+%Y-%m-%d %H:%M')" || echo "No hay cambios"
           git push
