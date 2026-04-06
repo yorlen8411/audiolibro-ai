@@ -1,8 +1,8 @@
-name: Máquina Infinita de Capítulos Autoayuda
+name: Máquina Autoayuda - Generador de Capítulos
 
 on:
   schedule:
-    - cron: "*/5 * * * *"   # Cada 5 minutos mientras pruebas
+    - cron: "*/8 * * * *"   # Cada 8 minutos (más seguro)
   workflow_dispatch:
 
 permissions:
@@ -14,7 +14,6 @@ jobs:
     
     env:
       GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
       - name: Checkout repo
@@ -31,36 +30,63 @@ jobs:
           cat << 'EOF' > generate.py
           import requests, os, glob, time
           from datetime import datetime
-          import random
 
           API_KEY = os.getenv("GEMINI_API_KEY")
           if not API_KEY:
-              raise ValueError("API KEY no encontrada")
+              print("❌ ERROR: GEMINI_API_KEY no encontrada en Secrets")
+              exit(1)
 
           existing = glob.glob("capitulo_*_bloque_1.txt")
           chapter_num = len(existing) + 1
 
-          titles = ["El Ancla Invisible", "La Jaula que Tú Construiste", "El Precio de Seguir Cómodo", "La Identidad que Te Mata Lentamente", "Por Qué Saboteas Tu Propio Éxito", "El Miedo que Nadie Habla", "Cuando Dejas de Mentirte a Ti Mismo", "La Versión de Ti que Está Esperando", "El Vacío que el Éxito No Llena", "Rompiendo la Historia que Te Define"]
+          titles = [
+              "El Ancla Invisible", "La Jaula que Tú Construiste", "El Precio de Seguir Cómodo",
+              "La Identidad que Te Mata Lentamente", "Por Qué Saboteas Tu Propio Éxito",
+              "El Miedo que Nadie Habla", "Cuando Dejas de Mentirte a Ti Mismo"
+          ]
 
           title = titles[(chapter_num-1) % len(titles)]
 
-          print(f"Generando Capítulo {chapter_num}: {title}")
+          print(f"🚀 Iniciando Capítulo {chapter_num}: {title}")
 
-          for b in range(1,8):
-              prompt = f"""Genera el BLOQUE {b} de 7 del capítulo "{title}" de autoayuda.
-              Frases cortas. Muchas "...". Saltos de línea. Habla directo a "tú". Estilo spoken-word emocional."""
+          for block in range(1, 8):
+              prompt = f"""Genera el BLOQUE {block} de 7 del capítulo de autoayuda titulado "{title}".
+              Usa frases cortas, muchas pausas con "...", saltos de línea frecuentes y habla directo al oyente ("tú"). 
+              Estilo spoken-word emocional y motivacional."""
 
               url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={API_KEY}"
-              data = {"contents": [{"parts": [{"text": prompt}]}],"generationConfig": {"temperature": 0.85, "maxOutputTokens": 2048}}
 
-              r = requests.post(url, headers={"Content-Type": "application/json"}, json=data)
-              text = r.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
+              data = {
+                  "contents": [{"parts": [{"text": prompt}]}],
+                  "generationConfig": {
+                      "temperature": 0.85,
+                      "maxOutputTokens": 2048
+                  }
+              }
 
-              with open(f"capitulo_{chapter_num:02d}_bloque_{b}.txt", "w", encoding="utf-8") as f:
-                  f.write(text)
+              try:
+                  response = requests.post(url, headers={"Content-Type": "application/json"}, json=data, timeout=30)
+                  print(f"Status Code Bloque {block}: {response.status_code}")
 
-              print(f"Bloque {b} listo")
-              time.sleep(8)
+                  if response.status_code != 200:
+                      print("Error completo de Gemini:")
+                      print(response.text)
+                      raise Exception(f"API Error {response.status_code}")
+
+                  text = response.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
+
+                  filename = f"capitulo_{chapter_num:02d}_bloque_{block}.txt"
+                  with open(filename, "w", encoding="utf-8") as f:
+                      f.write(text)
+
+                  print(f"✅ Bloque {block} generado correctamente ({len(text.split())} palabras)")
+              except Exception as e:
+                  print(f"❌ Error en bloque {block}: {str(e)}")
+                  raise
+
+              time.sleep(10)  # Pausa para evitar rate limits
+
+          print(f"🎉 Capítulo {chapter_num} completado")
           EOF
 
           python3 generate.py
@@ -71,5 +97,5 @@ jobs:
           git config --global user.name "AudiolibroBot"
           git config --global user.email "bot@yordev.ai"
           git add capitulo_*.txt
-          git commit -m "Nuevo capítulo generado automáticamente" || echo "Sin cambios"
+          git commit -m "🤖 Nuevo capítulo autoayuda generado - $(date '+%Y-%m-%d %H:%M')" || echo "No hay cambios nuevos"
           git push
