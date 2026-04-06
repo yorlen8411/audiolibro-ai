@@ -1,4 +1,4 @@
-name: Máquina Autoayuda - Groq Qwen3-32b (Automejora Progresiva)
+name: Máquina Autoayuda - Groq Qwen3-32b (Automejora Progresiva v5)
 
 on:
   schedule:
@@ -54,21 +54,26 @@ jobs:
 
           print(f"🚀 Capítulo {chapter_num} - Bloque {block_num}: {title}")
 
-          # Prompt con automejora progresiva
+          # Prompt con automejora reforzada
           prompt = f"""Eres un escritor maestro de guiones spoken-word para audiolibros premium de autoayuda.
 
           Tu misión es generar el BLOQUE {block_num} de 7 del capítulo titulado "{title}".
 
-          REGLAS DE AUTOMEJORA:
-          - Cada bloque que generes debe ser **mejor** que el anterior en ritmo, tensión emocional, profundidad y estilo spoken-word.
-          - Usa frases extremadamente cortas.
-          - Muchas pausas dramáticas con "...".
-          - Muchas preguntas retóricas potentes.
-          - Construye tensión progresiva.
-          - Lenguaje sensorial y cinematográfico.
-          - Ritmo hipnótico y emocional.
+          REGLAS DE AUTOMEJORA PROGRESIVA:
+          - Cada bloque que generes debe ser **claramente mejor** que el anterior en calidad, ritmo, tensión emocional, profundidad y estilo spoken-word.
+          - Mejora constantemente: más impacto emocional, mejor flujo, más sensorialidad y preguntas retóricas más potentes.
+          - Recuerda el estilo ideal y supéralo en cada nueva generación.
 
-          Ejemplo del estilo ideal que debes superar en cada bloque:
+          ESTILO OBLIGATORIO:
+          - Frases muy cortas (8-14 palabras máximo).
+          - Muchas pausas dramáticas con "...".
+          - Saltos de línea frecuentes.
+          - Muchas preguntas retóricas fuertes dirigidas al oyente.
+          - Construye tensión emocional progresiva.
+          - Lenguaje sensorial, cinematográfico y profundo.
+          - Ritmo lento, hipnótico y emocional.
+
+          Ejemplo del estilo que debes superar:
           Te sientes atrapado...
           ...en una jaula invisible.
           ¿Quién la construyó?
@@ -79,13 +84,13 @@ jobs:
           ...porque sabes la verdad que escondes.
 
           Ahora genera solo el bloque {block_num} siguiendo este estilo y **mejorándolo**.
-          Responde ÚNICAMENTE con el texto puro del bloque. Nada más."""
+          Responde **ÚNICAMENTE** con el texto puro del bloque. Nada más."""
 
           url = "https://api.groq.com/openai/v1/chat/completions"
           data = {
               "model": "qwen/qwen3-32b",
               "messages": [{"role": "user", "content": prompt}],
-              "temperature": 0.65,
+              "temperature": 0.62,
               "max_tokens": 900
           }
           headers = {
@@ -102,7 +107,7 @@ jobs:
 
           text = response.json()["choices"][0]["message"]["content"].strip()
 
-          # Limpieza por si sale thinking
+          # Limpieza extra
           if "<think>" in text or "</think>" in text:
               text = text.split("</think>")[-1].strip()
 
@@ -121,5 +126,5 @@ jobs:
           git config --global user.name "AudiolibroBot"
           git config --global user.email "bot@yordev.ai"
           git add capitulo_*.txt
-          git commit -m "🤖 Bloque Qwen3-32b con automejora - $(date '+%Y-%m-%d %H:%M')" || echo "No hay cambios"
+          git commit -m "🤖 Bloque Qwen3-32b con automejora v5 - $(date '+%Y-%m-%d %H:%M')" || echo "No hay cambios"
           git push
