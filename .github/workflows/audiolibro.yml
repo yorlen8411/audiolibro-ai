@@ -1,4 +1,4 @@
-name: Generador Audiolibro IA - Capítulo 1
+name: Generador Audiolibro IA - Capítulo 1 (Optimizado para Applio TTS)
 
 on:
   schedule:
@@ -22,47 +22,50 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           ref: main
-          fetch-depth: 0
 
       - name: Instalar dependencias
         run: pip install requests
 
-      - name: Generar Bloque 9 (versión PRO con control de calidad)
+      - name: Generar Bloque 9 OPTIMIZADO PARA APPLIO
         run: |
           cat << 'EOF' > generate_chapter.py
           import requests, os, glob
           from datetime import datetime
 
           API_KEY = os.getenv("GEMINI_API_KEY")
-          if not API_KEY:
-              raise ValueError("❌ GEMINI_API_KEY no encontrada")
+          if not API_KEY: raise ValueError("❌ GEMINI_API_KEY no encontrada")
 
-          # Cargar automáticamente todos los bloques anteriores
           bloques = sorted(glob.glob("cap1_bloque_*.txt"))
           contexto = ""
           for i, archivo in enumerate(bloques, 1):
               with open(archivo, "r", encoding="utf-8") as f:
                   contexto += f"\n\nBLOQUE {i}:\n{f.read().strip()}\n"
 
-          prompt = f"""Eres un escritor experto en audiolibros premium de desarrollo personal (nivel Audible y ElevenLabs).
-          Estilo obligatorio: narrativo cinematográfico, emocional profundo, spoken-word. 
-          Usa frases cortas. Muchas pausas dramáticas con "...". Repeticiones intencionales. Lenguaje sensorial. Ritmo lento y poderoso.
+          prompt = f"""Eres un escritor experto en scripts de audiolibros premium para TTS local como Applio (RVC + StyleTTS2 o similar).
+          El texto generado será leído por voz IA offline, por lo que debe ser 100% optimizado para spoken-word.
 
-          Genera **SOLO** el BLOQUE 9 del Capítulo 1 titulado "El Ancla Invisible".
-          Debe continuar exactamente después del Bloque 8.
+          Estilo obligatorio:
+          - Frases muy cortas y conversacionales (máximo 15-20 palabras por frase).
+          - Muchas pausas dramáticas con "...".
+          - Repeticiones intencionales para énfasis emocional.
+          - Lenguaje sensorial y cinematográfico.
+          - Ritmo lento, hipnótico y adictivo.
+          - Saltos de línea frecuentes para que la voz respire naturalmente.
 
-          Aquí están los 8 bloques anteriores para mantener coherencia total:
+          Genera **SOLO** el BLOQUE 9 del Capítulo 1 "El Ancla Invisible".
+          Continúa exactamente después del Bloque 8.
 
+          Bloques anteriores (mantén coherencia total):
           {contexto}
 
-          REQUISITOS ESTRICTOS:
-          - Longitud: entre 480 y 680 palabras.
-          - Nunca cortes la idea a la mitad. Termina con un cierre fuerte.
-          - Baja más profundo en el miedo al ser visto, al vacío interior o al momento de soltar el ancla.
-          - Crea tensión emocional creciente.
-          - Termina preparando al oyente para el siguiente nivel (el verdadero acto de soltar o la decisión irreversible).
+          REQUISITOS ESTRICTOS PARA APPLIO:
+          - Longitud: 520-680 palabras.
+          - Intensifica el miedo al ser visto, al vacío interior y a soltar el ancla.
+          - Construye tensión emocional creciente.
+          - Termina con un cierre poderoso que deje al oyente con "ya no hay vuelta atrás" y ansias por continuar.
+          - Nunca cortes una idea a la mitad. Todo debe fluir perfecto para narración spoken-word.
 
-          Responde ÚNICAMENTE con el texto del bloque. Sin títulos, sin explicaciones, sin "Bloque 9:"."""
+          Responde **ÚNICAMENTE** con el texto puro del bloque. Sin títulos, sin explicaciones, sin nada más."""
 
           url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={API_KEY}"
 
@@ -71,22 +74,15 @@ jobs:
               "generationConfig": {
                   "temperature": 0.85,
                   "topP": 0.92,
-                  "maxOutputTokens": 4096,   # ← más tokens para que no corte
+                  "maxOutputTokens": 4096,
               },
-              "safetySettings": [
-                  {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
-                  {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
-                  {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
-                  {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"}
-              ]
+              "safetySettings": [{"category": c, "threshold": "BLOCK_NONE"} for c in ["HARM_CATEGORY_HARASSMENT","HARM_CATEGORY_HATE_SPEECH","HARM_CATEGORY_SEXUALLY_EXPLICIT","HARM_CATEGORY_DANGEROUS_CONTENT"]]
           }
 
-          response = requests.post(url, headers={"Content-Type": "application/json"}, json=data)
-          
-          if response.status_code != 200:
-              raise Exception(f"API Error: {response.status_code} - {response.text}")
+          r = requests.post(url, headers={"Content-Type": "application/json"}, json=data)
+          if r.status_code != 200: raise Exception(f"API Error: {r.text}")
 
-          text = response.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
+          text = r.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
 
           timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
           filename = f"cap1_bloque_{timestamp}.txt"
@@ -94,10 +90,8 @@ jobs:
           with open(filename, "w", encoding="utf-8") as f:
               f.write(text)
 
-          print(f"✅ BLOQUE 9 GENERADO: {filename}")
-          print(f"Longitud: {len(text.split())} palabras")
-          print("\\n--- VISTA PREVIA ---\\n")
-          print(text[:700] + "..." if len(text) > 700 else text)
+          print(f"✅ BLOQUE GENERADO PARA APPLIO: {filename} ({len(text.split())} palabras)")
+          print(text[:900] + "..." if len(text) > 900 else text)
           EOF
 
           python3 generate_chapter.py
@@ -108,5 +102,5 @@ jobs:
           git config --global user.name "AudiolibroBot"
           git config --global user.email "bot@yordev.ai"
           git add cap1_bloque_*.txt
-          git commit -m "🤖 Bloque 9 generado automáticamente - $(date '+%Y-%m-%d %H:%M')" || echo "No hay cambios"
+          git commit -m "🤖 Bloque 9 optimizado para Applio TTS - $(date '+%Y-%m-%d %H:%M')" || echo "No hay cambios"
           git push
