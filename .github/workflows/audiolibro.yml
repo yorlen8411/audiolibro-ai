@@ -1,4 +1,4 @@
-name: Máquina Autoayuda - Groq Qwen3-32b (Anti-Thinking + Automejora)
+name: Máquina Autoayuda - Groq Qwen3-32b (Pipeline Mejora v6)
 
 on:
   schedule:
@@ -25,7 +25,7 @@ jobs:
       - name: Instalar dependencias
         run: pip install requests
 
-      - name: Generar 1 Bloque con Pipeline Anti-Thinking
+      - name: Generar + Refinar Bloque (Pipeline v6)
         run: |
           cat << 'EOF' > generate.py
           import requests, os, glob, time
@@ -56,23 +56,24 @@ jobs:
 
           # Paso 1: Borrador
           prompt_borrador = f"""Genera el BLOQUE {block_num} de 7 del capítulo "{title}" de autoayuda.
-          Frases cortas, muchas "...", preguntas retóricas, tono emocional profundo."""
+          Frases cortas, pausas con "...", preguntas retóricas, tono emocional."""
 
           # Paso 2: Refinamiento fuerte (automejora)
           prompt_refinar = f"""Reescribe el siguiente texto para que sea mucho más poderoso, emocional y adictivo para spoken-word premium.
 
-          Reglas estrictas:
-          - Frases muy cortas (8-14 palabras máximo)
+          Reglas estrictas de mejora:
+          - Frases extremadamente cortas (8-14 palabras máximo)
           - Muchas pausas dramáticas con "..."
           - Muchas preguntas retóricas fuertes
-          - Aumenta tensión emocional progresiva
-          - Hazlo sensorial y cinematográfico
-          - Ritmo hipnótico y profundo
+          - Aumenta la tensión emocional progresiva
+          - Hazlo más sensorial y cinematográfico
+          - Mejora el ritmo para que suene hipnótico y profundo cuando se lea en voz alta
+          - Elimina cualquier razonamiento o explicación
 
           Texto original:
           {{draft}}
 
-          Responde SOLO con el texto mejorado. NADA más. Sin explicaciones, sin <think>, sin nada interno."""
+          Responde SOLO con el texto mejorado. Nada más. Sin <think>, sin explicaciones."""
 
           url = "https://api.groq.com/openai/v1/chat/completions"
           headers = {"Authorization": f"Bearer {API_KEY}", "Content-Type": "application/json"}
@@ -81,7 +82,7 @@ jobs:
           data = {
               "model": "qwen/qwen3-32b",
               "messages": [{"role": "user", "content": prompt_borrador}],
-              "temperature": 0.75,
+              "temperature": 0.72,
               "max_tokens": 800
           }
           response = requests.post(url, headers=headers, json=data, timeout=40)
@@ -93,7 +94,7 @@ jobs:
           final_text = response.json()["choices"][0]["message"]["content"].strip()
 
           # Limpieza fuerte contra <think>
-          if "<think>" in final_text:
+          if "<think>" in final_text or "</think>" in final_text:
               final_text = final_text.split("</think>")[-1].strip()
           final_text = final_text.replace("<think>", "").replace("</think>", "").strip()
 
@@ -112,5 +113,5 @@ jobs:
           git config --global user.name "AudiolibroBot"
           git config --global user.email "bot@yordev.ai"
           git add capitulo_*.txt
-          git commit -m "🤖 Bloque Qwen3-32b con pipeline anti-thinking - $(date '+%Y-%m-%d %H:%M')" || echo "No hay cambios"
+          git commit -m "🤖 Bloque Qwen3-32b con pipeline v6 - $(date '+%Y-%m-%d %H:%M')" || echo "No hay cambios"
           git push
