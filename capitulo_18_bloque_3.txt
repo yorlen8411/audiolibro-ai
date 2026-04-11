@@ -1,0 +1,29 @@
+Okay, the user wants me to rewrite the given text for spoken-word premium. The rules are strict: short phrases, dramatic pauses with "...", strong rhetorical questions, and building emotional tension. The goal is to make it more powerful, emotional, and addictive.
+
+First, I need to parse the original text. It's about the emptiness that success doesn't fill. The original uses phrases like "¿Alguna vez has corrido tras un sueño... solo para encontrar silencio al alcanzarlo?" which is good but maybe can be more impactful with shorter sentences and more pauses.
+
+I should start by breaking down each sentence into shorter segments. For example, the original first sentence is a bit long. Splitting it into two parts with an ellipsis might create a stronger pause. Also, using more rhetorical questions can engage the listener more. Words like "¿Y ahora, quién soy sin esto?" are great but maybe can be intensified with more emotional language.
+
+I need to add more sensory and cinematic elements. Maybe use metaphors like "faros que no iluminan tu piel" to evoke imagery. Also, increasing the emotional tension by asking questions that make the listener reflect deeply. For instance, changing "El vacío no es un enemigo…" to "El vacío no es tu enemigo… *es un espejo que te arrastra al abismo*" adds more drama.
+
+Including more pauses with ellipses will help the spoken-word rhythm. Each line should be a punch, so short and sharp. For example, "El éxito te premia… *pero ¿quién premia tu silencio?*" uses italics for emphasis, which is good, but in the revised text, maybe just ellipses and bolding if needed. Wait, the user said no markdown, so just the ellipses.
+
+Also, the original has a structure that builds up, so I need to maintain that progression. Starting with a question about chasing dreams, moving to metaphors, then personal reflection, and ending with a strong rhetorical question. Each block should escalate the emotion.
+
+I should check each rule again: phrases 8-14 words, many pauses, rhetorical questions, increasing tension, sensory language, hypnotic rhythm. Let me go line by line.
+
+Original line: "¿Alguna vez has corrido tras un sueño... solo para encontrar silencio al alcanzarlo?"  
+Shorten and add pauses: "¿Alguna vez corriste tras un sueño… / ...para topar con un vacío que no puedes llenar?"  
+Using "para topar" instead of "solo para encontrar" adds a sharper action. Adding a line break with a slash to indicate a pause.
+
+Next line: "El éxito escribe tu nombre en el cielo... pero ¿quién escucha su eco en tu pecho?"  
+Maybe: "El éxito escribe tu nombre en el cielo… / ...pero ¿quién escucha el eco en tu hueso?"  
+"Hueso" adds a more visceral, sensory element.
+
+Continue this process, making each line shorter, adding pauses, and using more vivid imagery. Replace "metas son faros" with "metas son faros que no iluminan tu piel" to emphasize the disconnect.
+
+Ending with a powerful question that ties back to the theme, like "¿Y si el vacío es tu invitación… / ...a dejar de correr… y comenzar a existir?" to create a climax.
+
+Need to ensure that each line is 8-14 words, using ellipses to create dramatic pauses. Check for rhetorical questions and emotional progression. Make sure the language is cinematic, using words that evoke senses and strong imagery.
+
+Finally, review the revised text to ensure it meets all the rules and guidelines. Remove any markdown, keep it in Spanish
