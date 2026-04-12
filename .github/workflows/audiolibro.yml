@@ -1,17 +1,22 @@
-name: Máquina Autoayuda - Groq Qwen3-32b (Anti-Thinking v8)
+name: Máquina Autoayuda - Groq Qwen3-32b (Fast v1)
 
 on:
   schedule:
-    - cron: "*/12 * * * *"   
+    - cron: "*/12 * * * *"
   workflow_dispatch:
 
 permissions:
   contents: write
 
+concurrency:
+  group: audiolibro-groq
+  cancel-in-progress: false
+
 jobs:
   generar:
     runs-on: ubuntu-latest
-    
+    timeout-minutes: 10
+
     env:
       GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
 
@@ -21,20 +26,27 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           ref: main
+          fetch-depth: 1
 
-      - name: Instalar dependencias
-        run: pip install requests
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
 
-      - name: Generar 1 Bloque con Pipeline Anti-Thinking
+      - name: Generar 1 bloque optimizado
+        shell: bash
         run: |
           cat << 'EOF' > generate.py
-          import requests, os, glob, time
-          from datetime import datetime
+          import os
+          import glob
+          import time
+          import json
+          import requests
 
           API_KEY = os.getenv("GROQ_API_KEY")
           if not API_KEY:
               print("❌ GROQ_API_KEY no encontrada")
-              exit(1)
+              raise SystemExit(1)
 
           existing = sorted(glob.glob("capitulo_*_bloque_*.txt"))
           if not existing:
@@ -48,75 +60,119 @@ jobs:
                   chapter_num += 1
                   block_num = 1
 
-          titles = ["El Ancla Invisible", "La Jaula que Tú Construiste", "El Precio de Seguir Cómodo", "La Identidad que Te Mata Lentamente", "Por Qué Saboteas Tu Propio Éxito", "El Miedo que Nadie Habla", "Cuando Dejas de Mentirte a Ti Mismo", "La Versión de Ti que Está Esperando", "El Vacío que el Éxito No Llena"]
+          titles = [
+              "El Ancla Invisible",
+              "La Jaula que Tú Construiste",
+              "El Precio de Seguir Cómodo",
+              "La Identidad que Te Mata Lentamente",
+              "Por Qué Saboteas Tu Propio Éxito",
+              "El Miedo que Nadie Habla",
+              "Cuando Dejas de Mentirte a Ti Mismo",
+              "La Versión de Ti que Está Esperando",
+              "El Vacío que el Éxito No Llena"
+          ]
 
-          title = titles[(chapter_num-1) % len(titles)]
-
+          title = titles[(chapter_num - 1) % len(titles)]
           print(f"🚀 Capítulo {chapter_num} - Bloque {block_num}: {title}")
 
-          # Paso 1: Borrador
-          prompt_borrador = f"""Genera el BLOQUE {block_num} de 7 del capítulo "{title}" de autoayuda.
-          Frases cortas, pausas con "...", preguntas retóricas, tono emocional."""
-
-          # Paso 2: Refinamiento fuerte
-          prompt_refinar = f"""Reescribe el siguiente texto para que sea mucho más poderoso, emocional y adictivo para spoken-word premium.
+          prompt = f"""Genera el BLOQUE {block_num} de 7 del capítulo "{title}" de autoayuda oscura.
 
           Reglas estrictas:
-          - Frases extremadamente cortas (8-14 palabras máximo)
-          - Muchas pausas dramáticas con "..."
-          - Muchas preguntas retóricas fuertes
-          - Aumenta tensión emocional progresiva
-          - Lenguaje sensorial y cinematográfico
-          - Ritmo hipnótico y profundo
-          - Responde SOLO con el texto mejorado. NADA más. Sin <think>, sin explicaciones, sin títulos, sin razonamiento.
+          - Español natural y potente
+          - Texto final listo, sin borrador
+          - Frases cortas
+          - Ritmo oral, emocional, hipnótico
+          - Usa pausas con "..."
+          - Preguntas retóricas fuertes
+          - Sin títulos
+          - Sin etiquetas
+          - Sin "BLOQUE"
+          - Sin explicaciones
+          - Sin razonamiento
+          - Sin <think>
+          - Entre 170 y 230 palabras aprox.
 
-          Texto original:
-          {{draft}}
+          Objetivo:
+          - Debe sonar como narración premium para audiolibro / spoken word
+          - Debe aumentar tensión emocional
+          - Debe dejar ganas de escuchar el siguiente bloque
 
-          Responde solo con el texto mejorado."""
+          Responde SOLO con el texto final.
+          """
 
           url = "https://api.groq.com/openai/v1/chat/completions"
-          headers = {"Authorization": f"Bearer {API_KEY}", "Content-Type": "application/json"}
+          headers = {
+              "Authorization": f"Bearer {API_KEY}",
+              "Content-Type": "application/json"
+          }
 
-          # Primera llamada - Borrador
           data = {
               "model": "qwen/qwen3-32b",
-              "messages": [{"role": "user", "content": prompt_borrador}],
+              "messages": [
+                  {"role": "user", "content": prompt}
+              ],
               "temperature": 0.72,
-              "max_tokens": 800
+              "max_tokens": 900
           }
-          response = requests.post(url, headers=headers, json=data, timeout=40)
-          draft = response.json()["choices"][0]["message"]["content"].strip()
 
-          # Segunda llamada - Refinamiento
-          data["messages"] = [{"role": "user", "content": prompt_refinar.format(draft=draft)}]
-          response = requests.post(url, headers=headers, json=data, timeout=40)
-          final_text = response.json()["choices"][0]["message"]["content"].strip()
+          def post_with_retry(url, headers, payload, attempts=4, timeout=90):
+              last_error = None
+              for attempt in range(1, attempts + 1):
+                  try:
+                      response = requests.post(url, headers=headers, json=payload, timeout=timeout)
+                      if response.status_code >= 400:
+                          raise RuntimeError(f"HTTP {response.status_code}: {response.text[:500]}")
+                      body = response.json()
+                      content = body["choices"][0]["message"]["content"].strip()
+                      if not content:
+                          raise RuntimeError("Respuesta vacía del modelo")
+                      return content
+                  except Exception as e:
+                      last_error = e
+                      wait_time = min(20, attempt * 4)
+                      print(f"⚠️ Intento {attempt}/{attempts} falló: {e}")
+                      if attempt < attempts:
+                          print(f"⏳ Reintentando en {wait_time}s...")
+                          time.sleep(wait_time)
+              raise RuntimeError(f"❌ Fallaron todos los intentos: {last_error}")
 
-          # Limpieza AGRESIVA
-          if "<think>" in final_text or "</think>" in final_text:
+          final_text = post_with_retry(url, headers, data)
+
+          # Limpieza
+          if "</think>" in final_text:
               final_text = final_text.split("</think>")[-1].strip()
           final_text = final_text.replace("<think>", "").replace("</think>", "").strip()
 
-          # Eliminar cualquier título o "BLOQUE" que se escape
-          lines = final_text.split('\n')
-          clean_lines = [line for line in lines if not line.strip().upper().startswith("BLOQUE") and not line.strip().startswith("**")]
-          final_text = '\n'.join(clean_lines).strip()
+          lines = final_text.splitlines()
+          clean_lines = []
+          for line in lines:
+              s = line.strip()
+              if not s:
+                  clean_lines.append("")
+                  continue
+              if s.upper().startswith("BLOQUE"):
+                  continue
+              if s.startswith("**"):
+                  continue
+              clean_lines.append(line)
+
+          final_text = "\n".join(clean_lines).strip()
 
           filename = f"capitulo_{chapter_num:02d}_bloque_{block_num}.txt"
           with open(filename, "w", encoding="utf-8") as f:
               f.write(final_text)
 
-          print(f"✅ Guardado (refinado): {filename} ({len(final_text.split())} palabras)")
+          print(f"✅ Guardado: {filename} ({len(final_text.split())} palabras)")
           EOF
 
-          python3 generate.py
-        shell: bash
+          python generate.py
 
       - name: Commit y Push
+        shell: bash
         run: |
           git config --global user.name "AudiolibroBot"
           git config --global user.email "bot@yordev.ai"
           git add capitulo_*.txt
-          git commit -m "🤖 Bloque Qwen3-32b pipeline v8 - $(date '+%Y-%m-%d %H:%M')" || echo "No hay cambios"
+          git diff --cached --quiet && echo "No hay cambios" && exit 0
+          git commit -m "🤖 Bloque Qwen3-32b fast v1 - $(date '+%Y-%m-%d %H:%M')"
           git push
