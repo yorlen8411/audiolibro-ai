@@ -1,0 +1,21 @@
+Okay, let me try to figure out how to approach this user's request. They want a rewritten version of the given text for spoken-word premium, making it more powerful, emotional, and addictive. The rules are pretty strict: short phrases (8-14 words max), dramatic pauses with "...", strong rhetorical questions, progressive emotional tension, sensory and cinematic language, a hypnotic rhythm, and no explanations or titles—just the improved text.
+
+First, I need to parse the original text. It's in Spanish, so I need to ensure the translation or adaptation maintains the essence but enhances it. The original seems to be about toxic identity, self-forgiveness, and the need for change. The user wants it to be more impactful for spoken word, which is a rhythmic and emotional style.
+
+I should start by breaking down the original into its key points and then rephrase each into shorter, punchier sentences. Using ellipses for pauses is crucial to create a dramatic effect. Rhetorical questions can engage the audience and provoke thought. I need to build up the emotional tension gradually, maybe starting with the problem, then the consequences, and finally a call to action.
+
+Sensory language is important. Words that evoke sight, sound, touch, etc., will make the text more vivid. Cinematic language could involve metaphors like "a knife in the heart" or "a shadow." The rhythm should be hypnotic, so maybe using repetition or alliteration.
+
+I also need to ensure that the Spanish is correct and natural. Since the original is in Spanish, the response should maintain the language without any errors. The user specified to respond only with the improved text, so I must avoid any additional explanations or titles.
+
+Let me start by looking at the original text and identifying key phrases to enhance. For example, "Reglas estrictas:" becomes part of the structure, but the user wants that omitted in the final response. The original seems to be a list of instructions, but the user wants the rewritten text to be the actual content. Wait, maybe the original is not the text to be rewritten but the rules? Wait, no, the user provided the original text as the text to be rewritten. Let me check again.
+
+Looking back, the user provided a text to be rewritten. The original text is in Spanish, and the user wants it enhanced. The user's initial message includes the original text in the query, so the task is to take that text and rewrite it according to the given rules.
+
+Wait, the user's original query starts with "Reescribe el siguiente texto..." which means "Rewrite the following text..." and then they provide the text. So, the original text is the one they provided, and the task is to rewrite it. The example they gave includes a response in Spanish, so I need to process that.
+
+Original text to rewrite: It's a set of instructions for a self-help book chapter block. The user wants this rewritten for spoken-word, following the strict rules. The original text is in Spanish, so the response should also be in Spanish.
+
+Wait, the user provided the original text in Spanish in the query, but the example response they included is in Spanish as well. So, I need to process the original text provided in the query, which is in the user's message after "Texto original:".
+
+But in the current query, the user hasn't provided the original text. Wait, looking back, the user included the original text in the query as part of the problem. Wait, no, in the initial problem setup, the user provided the original text as part of their query. But in the current scenario, the user hasn't included the original text. Wait, no, the user in this current query (the one starting with "Reescribe el siguiente texto...") is asking to rewrite a text that they provided. However, in the current context, the user hasn't
